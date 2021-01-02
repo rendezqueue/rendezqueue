@@ -13,9 +13,7 @@ jobs:
         bazel-version: '2.0.0'
 
     - name: Build
-      working-directory: ${{runner.workspace}}
       run: bazel build ...
 
     - name: Test
-      working-directory: ${{runner.workspace}}
       run: bazel test ...
