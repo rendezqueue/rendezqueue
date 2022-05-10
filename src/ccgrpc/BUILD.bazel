@@ -1,0 +1,27 @@
+
+cc_binary(
+    name = "syncserver",
+    srcs = [
+        "syncserver.cc",
+    ],
+    deps = [
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/flags:parse",
+        "//proto:rendezqueue_grpc_proto",
+    ],
+    testonly = True,
+)
+
+cc_binary(
+    name = "syncclient",
+    srcs = [
+        "syncclient.cc",
+    ],
+    deps = [
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/flags:parse",
+        "//proto:rendezqueue_grpc_proto",
+    ],
+    testonly = True,
+)
+
