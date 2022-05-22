@@ -1,5 +1,6 @@
 "use strict";
 
+
 const http = require("http");
 const path = require('path');
 const querystring = require("querystring");
@@ -10,54 +11,88 @@ const hostname = "127.0.0.1";  // Listen on localhost.
 const port = 5480;  // Keep in sync with lighttpd.
 
 const MAX_KEY_BYTES = 100;
-const MAX_ID_VALUE = Number.MAX_SAFE_INTEGER;
+const MAX_ID_BYTES = 100;
 const MAX_VALUE_BYTES = 1000;
 
 var swapstore = new SwapStore();
 
-function respond_json_http(http_code, content_object, res) {
-  res.writeHead(http_code, { "Content-Type": "application/json" });
-  if (content_object) {
-    res.end(JSON.stringify(content_object));
+function btoa(s) {
+  return Buffer.from(s, "latin1").toString("base64");
+}
+function atob(s) {
+  return Buffer.from(s, "base64").toString("latin1");
+}
+
+function respond_options_http(req, res) {
+  const http_status_code = 204;
+  let http_header_map = {
+    // "Access-Control-Max-Age": 86400,
+    // "Cache-Control": "public, max-age=86400",
+    // "Vary": "Origin",
+  };
+  if (req.headers["access-control-request-headers"]) {
+    http_header_map["Access-Control-Allow-Headers"] = req.headers["access-control-request-headers"];
+  }
+  if (req.headers["access-control-request-method"]) {
+    http_header_map["Access-Control-Allow-Methods"] = req.headers["access-control-request-method"];
+  }
+  if (req.headers["origin"]) {
+    http_header_map["Access-Control-Allow-Origin"] = req.headers["origin"];
+  }
+  res.writeHead(http_status_code, http_header_map);
+  res.end();
+}
+
+function respond_json_http(http_code, msg, res) {
+  const header_map = {
+    "Access-Control-Allow-Origin": "*",  // This isn't how it works.
+    "Content-Type": "application/json",
+  };
+  res.writeHead(http_code, header_map);
+  if (msg) {
+    msg.key = btoa(msg.key);
+    msg.id = btoa(msg.id);
+    if (msg.values) {
+      msg.values = msg.values.map(btoa);
+    }
+    res.end(JSON.stringify(msg));
   } else {
     res.end();
   }
 }
 
-function parse_post_args(args) {
-  let key = args["key"];
-  let id_arg = args["id"];
-  let offset_arg = args["offset"];
-  let values_arg = args["values"];
+function parse_json_tryswap_request(request_text) {
+  let msg = null;
+  try {
+    msg = JSON.parse(request_text);
 
-  let id = parseInt(id_arg);
-  if (isNaN(id)) {
-    return null;
-  }
-  let offset = parseInt(offset_arg);
-  if (isNaN(offset)) {
-    return null;
-  }
-  let values = [];
-  if (values_arg) {
-    values = JSON.parse(values_arg);
-    if (!(values instanceof Array)) {
-      return null;
-    }
-  }
+    if (msg.key === undefined) {msg.key = "";}
+    else if (typeof(msg.key) != "string") {throw "key";}
 
-  return {
-    key: key,
-    id: id,
-    offset: offset,
-    values: values,
-  };
+    if (msg.id === undefined) {msg.id = "";}
+    else if (typeof(msg.id) != "string") {throw "id";}
+
+    if (msg.offset === undefined) {msg.offset = 0;}
+    else if (!Number.isInteger(msg.offset) || msg.offset < 0) {throw "offset";}
+
+    if (msg.values === undefined) {msg.values = [];}
+    else if (!Array.isArray(msg.values)) {throw "values";}
+
+    msg.key = atob(msg.key);
+    msg.id = atob(msg.id);
+    msg.values = msg.values.map(atob);
+  }
+  catch (e) {
+    console.log(e);
+    msg = null;
+  }
+  return msg;
 }
 
 /** Actually do the handling.*/
-function sanitize_and_handle_request(msg, res) {
+function handle_parsed_request(msg, res) {
   if (!msg) {
-    respond_json_http(413, null, res);
+    respond_json_http(400, null, res);
     return;
   }
   let key = msg.key;
@@ -65,22 +100,16 @@ function sanitize_and_handle_request(msg, res) {
   let offset = msg.offset;
   let values = msg.values;
 
-  if (!key || key.length > MAX_KEY_BYTES) {
+  if (key.length > MAX_KEY_BYTES) {
     respond_json_http(413, null, res);
     return;
   }
 
-  if (!id || id > MAX_ID_VALUE) {
+  if (id.length > MAX_ID_BYTES) {
     respond_json_http(413, null, res);
     return;
   }
-  if (!offset) {
-    offset = 0;
-  }
 
-  if (!values) {
-    values = [];
-  }
   if (values.reduce(((p, v) => p + v.length), 0) > MAX_VALUE_BYTES) {
     respond_json_http(413, null, res);
     return;
@@ -95,7 +124,7 @@ function sanitize_and_handle_request(msg, res) {
   }
 
   let result = swapstore.tryswap(key, id, offset, values, now_ms);
-  if (typeof(result) == "number") {
+  if (Number.isInteger(result)) {
     respond_json_http(result, null, res);
   } else {
     respond_json_http(200, result, res);
@@ -103,31 +132,19 @@ function sanitize_and_handle_request(msg, res) {
 }
 
 function handle_request_cb(req, res) {
-  if (req.method == 'GET') {
-    const u = url.parse(req.url, true);
-    const msg = parse_post_args(u.query);
-    sanitize_and_handle_request(msg, res);
-  } else if (req.method == 'POST') {
+  if (req.method == "OPTIONS" && req.headers["access-control-request-method"] === "POST") {
+    respond_options_http(req, res);
+  }
+  else if (req.method == "POST" && req.headers["content-type"] === "application/json") {
     let body = '';
-    req.on('data', chunk => { body += chunk.toString(); });
-    req.on('end', () => {
-      let msg = {};
-      if (req.headers['content-type'] === 'application/json') {
-        try {
-          msg = JSON.parse(body);
-        }
-        catch (e) {
-          msg = {}
-        }
-      }
-      else {
-        msg = parse_post_args(querystring.parse(body));
-      }
-      sanitize_and_handle_request(msg, res);
+    req.on("data", chunk => { body += chunk.toString(); });
+    req.on("end", () => {
+      let msg = parse_json_tryswap_request(body);
+      handle_parsed_request(msg, res);
     });
-  } else {
-    res.writeHead(200, {'Content-Type': 'text/plain'});
-    res.end('go away');
+  }
+  else {
+    respond_json_http(418, {}, res);
   }
 }
 

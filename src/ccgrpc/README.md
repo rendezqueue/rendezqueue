@@ -1,5 +1,4 @@
 
-
 This is a C++ / gRPC version of the server, but it doesn't actually do swapping yet so the binaries and deps are marked as testonly.
 I'd like to actually use gRPC but JavaScript in a browser cannot talk to it directly, so what's the point?
 Maybe grpc-web is a path forward, but it requires a proxy.

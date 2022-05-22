@@ -6,10 +6,17 @@ exports_files([
 ])
 
 nodejs_binary(
-    name = "swapserve",
+    name = "rendezqueue_nodejson",
     data = [
         ":main.js",
         ":swapstore.js",
     ],
     entry_point = ":main.js",
+)
+
+sh_binary(
+    name = "some_requests_sh",
+    srcs = [
+        "some_requests.sh",
+    ],
 )

@@ -19,7 +19,7 @@
 ABSL_FLAG(std::string, backend_ssl_root_crt, "", "Root cert. If server self-signs, use server.crt.");
 ABSL_FLAG(std::string, backend_address, "127.0.0.1:50051", "Where the service is.");
 ABSL_FLAG(std::string, key, "hello!", "Key to set.");
-ABSL_FLAG(uint32_t, id, 5, "Id to set.");
+ABSL_FLAG(std::string, id, "generic client", "Id to set.");
 
 
 using grpc::Status;

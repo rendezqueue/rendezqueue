@@ -78,10 +78,9 @@ class SwapStore {
     this.expire_unmatched_offers(now_ms);
     let answer_map = this.swapped_answer_multimap.get(key);
     let ttl = this.ttl;
-    const id_string = id.toString();
 
     if (answer_map) {
-      let answer = answer_map.get(id_string);
+      let answer = answer_map.get(id);
       if (answer) {
         if (SwapStore.matches_original(answer.original_values, offset, values)) {
           return {
@@ -153,12 +152,12 @@ class SwapStore {
       answer_map = new Map();
       this.swapped_answer_multimap.set(key, answer_map);
     }
-    answer_map.set(id_string, {
+    answer_map.set(id, {
       original_values: values,
       values: offer.values,
       expiry_ms: now_ms + ttl * 1000,
     });
-    answer_map.set(offer.id.toString(), {
+    answer_map.set(offer.id, {
       original_values: offer.values,
       values: values,
       expiry_ms: now_ms + ttl * 1000,

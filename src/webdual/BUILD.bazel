@@ -1,0 +1,23 @@
+load(
+    "@build_bazel_rules_nodejs//:index.bzl",
+    "js_library",
+    "pkg_web",
+)
+
+
+js_library(
+    name = "script_js",
+    srcs = ["script.js"],
+)
+
+pkg_web(
+    name = "pkg",
+    srcs = [
+        "index.html",
+        ":script_js",
+    ],
+    stamp = "@rules_nodejs//nodejs/stamp:always",
+    substitutions = {
+        "${version}": "0.0.0",
+    },
+)

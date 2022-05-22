@@ -11,59 +11,59 @@ function tryswap_single(key, id, value) {
 }
 
 var res;
-res = tryswap_single("mykey", 5, "my5value");
+res = tryswap_single("mykey", "5id", "my5value");
 assert.equal(res.key, "mykey");
-assert.equal(res.id, 5);
+assert.equal(res.id, "5id");
 assert(res.ttl > 0);
 
-res = tryswap_single("mykey", 5, "my5value");
+res = tryswap_single("mykey", "5id", "my5value");
 assert.equal(res.key, "mykey");
-assert.equal(res.id, 5);
+assert.equal(res.id, "5id");
 
-res = tryswap_single("mykey", 6, "my6value");
+res = tryswap_single("mykey", "6id", "my6value");
 assert.equal(res.key, "mykey");
-assert.equal(res.id, 6);
+assert.equal(res.id, "6id");
 assert.equal(res.values[0], "my5value");
 
 swapstore.print_unmatched();
 swapstore.print_swapped();
 
-res = tryswap_single("mykey", 5, "my5value");
+res = tryswap_single("mykey", "5id", "my5value");
 assert.equal(res.key, "mykey");
 assert.equal(res.values[0], "my6value");
 
-res = tryswap_single("mykey", 8, "my8value");
+res = tryswap_single("mykey", "8id", "my8value");
 assert.equal(res.key, "mykey");
-assert.equal(res.id, 8);
+assert.equal(res.id, "8id");
 
-res = swapstore.tryswap("mykey", 9, 0, ["my9value"], swapstore.ttl + 2);
+res = swapstore.tryswap("mykey", "9id", 0, ["my9value"], swapstore.ttl + 2);
 assert.equal(res.key, "mykey");
 assert.equal(res.values[0], "my8value");
 
 
-res = swapstore.tryswap("kk", 1, 0, [], 1);
+res = swapstore.tryswap("kk", "1id", 0, [], 1);
 assert.equal(res.key, "kk");
-assert.equal(res.id, 1);
+assert.equal(res.id, "1id");
 assert.equal(res.offset, 0);
 assert.ok(!("values" in res));
-res = swapstore.tryswap("kk", 2, 0, [], 1);
+res = swapstore.tryswap("kk", "2id", 0, [], 1);
 assert.equal(res.key, "kk");
-assert.equal(res.id, 2);
+assert.equal(res.id, "2id");
 assert.equal(res.offset, 0);
 assert.ok(!("values" in res));
-res = swapstore.tryswap("kk", 1, 0, ["hii"], 1);
+res = swapstore.tryswap("kk", "1id", 0, ["hii"], 1);
 assert.equal(res.key, "kk");
-assert.equal(res.id, 1);
+assert.equal(res.id, "1id");
 assert.equal(res.offset, 1);
 assert.ok(!("values" in res));
-res = swapstore.tryswap("kk", 2, 0, [], 1);
+res = swapstore.tryswap("kk", "2id", 0, [], 1);
 assert.equal(res.key, "kk");
-assert.equal(res.id, 2);
+assert.equal(res.id, "2id");
 assert.equal(res.offset, 0);
 assert.equal(res.values.length, 1);
-res = swapstore.tryswap("kk", 1, 1, [], 1);
+res = swapstore.tryswap("kk", "1id", 1, [], 1);
 assert.equal(res.key, "kk");
-assert.equal(res.id, 1);
+assert.equal(res.id, "1id");
 assert.equal(res.offset, 1);
 assert.equal(res.values.length, 0);
 

@@ -3,7 +3,7 @@ package rendezqueue;
 
 message TrySwapRequest {
   bytes key = 1;
-  uint32 id = 2;
+  bytes id = 2;
   uint32 ttl = 3;
   uint32 offset = 4;
   repeated bytes values = 5;
@@ -13,7 +13,7 @@ message TrySwapResponse {
   // Your key. Just to confirm. Can be ignored.
   bytes key = 1;
   // Your id. Just to confirm. Can be ignored.
-  uint32 id = 2;
+  bytes id = 2;
   // Remaining seconds.
   uint32 ttl = 3;
   // Holds number of values (when values is not returned).
