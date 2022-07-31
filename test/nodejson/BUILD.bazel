@@ -1,6 +1,6 @@
-load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_test")
+load("@aspect_rules_js//js:defs.bzl", "js_test")
 
-nodejs_test(
+js_test(
     name = "bytestring_test",
     data = [
         "bytestring_test.js",
@@ -8,20 +8,20 @@ nodejs_test(
     entry_point = "bytestring_test.js",
 )
 
-nodejs_test(
+js_test(
     name = "swapstore_test",
     data = [
         "swapstore_test.js",
-        "//src/nodejson:swapstore.js",
+        "//src/nodejson:swapstore_js",
     ],
     entry_point = "swapstore_test.js",
 )
 
-nodejs_test(
+js_test(
     name = "tryswap_concat_test",
     data = [
         "tryswap_concat_test.js",
-        "//src/nodejson:swapstore.js",
+        "//src/nodejson:swapstore_js",
     ],
     entry_point = "tryswap_concat_test.js",
 )

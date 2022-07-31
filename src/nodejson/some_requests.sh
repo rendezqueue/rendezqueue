@@ -1,7 +1,13 @@
 #!/bin/sh
 
+set -e
+
+backend_url="http://127.0.0.1:5480/"
+if [ -n "$1" ]; then
+  backend_url="$1"
+fi
+
 tryswap() {
-  backend_url="http://127.0.0.1:5480/"
   curl -i -X POST -H 'Content-Type: application/json' -d "$1" "$backend_url"
   printf "\n\n\n"
 }

@@ -1,11 +1,7 @@
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+load("@aspect_rules_js//js:defs.bzl", "js_binary")
 
-load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
-
-exports_files([
-    "swapstore.js",
-])
-
-nodejs_binary(
+js_binary(
     name = "rendezqueue_nodejson",
     data = [
         ":main.js",
@@ -19,4 +15,11 @@ sh_binary(
     srcs = [
         "some_requests.sh",
     ],
+)
+
+# Export for testing.
+copy_to_bin(
+    name = "swapstore_js",
+    srcs = ["swapstore.js"],
+    visibility = ["//test/nodejson:__subpackages__"],
 )

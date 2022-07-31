@@ -7,12 +7,37 @@ const querystring = require("querystring");
 const url = require("url");
 const SwapStore = require(path.join(__dirname, "swapstore")).SwapStore;
 
-const hostname = "127.0.0.1";  // Listen on localhost.
-const port = 5480;  // Keep in sync with lighttpd.
-
 const MAX_KEY_BYTES = 100;
 const MAX_ID_BYTES = 100;
 const MAX_VALUE_BYTES = 1000;
+
+// Flags.
+let argmap = new Map();
+argmap.set("hostname", "127.0.0.1");
+argmap.set("port", "5480");
+
+for (let i = 2; i < process.argv.length; ++i) {
+  const arg = process.argv[i];
+  if (!arg.startsWith("--")) {
+    console.log("Not a flag: " + arg);
+    process.exit(64);
+  }
+  const eqidx = arg.indexOf("=");
+  if (eqidx < 0) {
+    console.log("Need flags to have equal sign.");
+    process.exit(64);
+  }
+  argmap.set(arg.slice(2, eqidx), arg.slice(eqidx+1));
+}
+
+const hostname = argmap.get("hostname");
+const port = parseInt(argmap.get("port"));
+if (Number.isNaN(port)) {
+  console.log("Bad port.");
+  process.exit(64);
+}
+// End flags.
+
 
 var swapstore = new SwapStore();
 

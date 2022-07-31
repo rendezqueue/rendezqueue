@@ -5,11 +5,10 @@ Start the server in one shell.
 bazel run //src/nodejson:rendezqueue_nodejson
 ```
 
-In another shell, build this webpage and open it in a browser.
+In another shell open this webpage in a browser.
 
 ```shell
-bazel build //src/webdual/...
-chromium bazel-bin/src/webdual/pkg/index.html
+chromium src/webdual/pkg/index.html
 ```
 
 It shows how many attempts 2 clients made to exchange their data "hello there" and "nowai".

@@ -1,6 +1,5 @@
 "use strict";
-const version = "0.0.0-PLACEHOLDER";
-const version_text = `Hello, World v${version}`;
+
 const backend_url = "http://127.0.0.1:5480/";
 
 function stringify_tryswap_request(key, id, offset, values=[], ttl=1) {
