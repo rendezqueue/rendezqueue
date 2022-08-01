@@ -1,0 +1,22 @@
+syntax = "proto3";
+package rendezqueue;
+import "proto/rendezqueue.proto";
+
+message TrySwapExpectation {
+  // Elapsed milliseconds since the prevous.
+  uint32 delta_ms = 1;
+  // Request. 
+  TrySwapRequest req = 2;
+  oneof expect {
+    // Response status code. 0 assumed to mean 200.
+    uint32 http_status_code = 3;
+    // Ensure that all response fields match.
+    TrySwapResponse res = 4;
+    // Only check fields that are provided.
+    TrySwapResponse has = 5;
+  }
+}
+
+message TrySwapScenario {
+  repeated TrySwapExpectation expectations = 1;
+}

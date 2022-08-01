@@ -5,15 +5,20 @@ module(
 
 bazel_dep(name = "aspect_bazel_lib", version = "1.9.1")
 bazel_dep(name = "aspect_rules_js", version = "0.13.0")
+bazel_dep(name = "bazel_skylib", version = "1.2.1")
 bazel_dep(name = "rules_proto", version = "4.0.0")
 
+bazel_dep(
+    name = "abseil-cpp",
+    version = "20211102.0",
+    repo_name = "com_google_absl",
+    dev_dependency = True)
 bazel_dep(
     name = "grpc",
     version = "1.41.0",
     repo_name = "com_github_grpc_grpc",
     dev_dependency = True)
 bazel_dep(
-    name = "abseil-cpp",
-    version = "20211102.0",
-    repo_name = "com_google_absl",
+    name = "rules_sxproto",
+    version = "0.0.2",
     dev_dependency = True)

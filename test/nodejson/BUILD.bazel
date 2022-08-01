@@ -1,4 +1,5 @@
 load("@aspect_rules_js//js:defs.bzl", "js_test")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 
 js_test(
     name = "bytestring_test",
@@ -6,6 +7,7 @@ js_test(
         "bytestring_test.js",
     ],
     entry_point = "bytestring_test.js",
+    size = "small",
 )
 
 js_test(
@@ -15,6 +17,7 @@ js_test(
         "//src/nodejson:swapstore_js",
     ],
     entry_point = "swapstore_test.js",
+    size = "small",
 )
 
 js_test(
@@ -24,4 +27,11 @@ js_test(
         "//src/nodejson:swapstore_js",
     ],
     entry_point = "tryswap_concat_test.js",
+    size = "small",
+)
+
+copy_to_bin(
+    name = "expect_test_js",
+    srcs = ["expect_test.js"],
+    visibility = ["//test/scenario:__subpackages__"],
 )

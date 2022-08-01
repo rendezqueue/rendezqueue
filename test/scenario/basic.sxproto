@@ -1,0 +1,65 @@
+((expectations)
+
+ (()
+  (req (key "k") (id "Alice") (ttl 5) ((values) "aa"))
+  (res (key "k") (id "Alice") (ttl 5) (offset 1)))
+ (()
+  (delta_ms 1000)
+  (req (key "k") (id "Alice") (ttl 5) (offset 1))
+  (res (key "k") (id "Alice") (ttl 5) (offset 1)))
+
+ (()
+  (delta_ms 1000)
+  (req (key "k") (id "Bob") (ttl 5) ((values) "bbbb"))
+  (res (key "k") (id "Bob") (offset 1) ((values) "aa")))
+
+ ; Both get a good response if they send their original values.
+ (()
+  (req (key "k") (id "Bob") ((values) "bbbb"))
+  (res (key "k") (id "Bob") (offset 1) ((values) "aa")))
+ (()
+  (req (key "k") (id "Alice") ((values) "aa"))
+  (res (key "k") (id "Alice") (offset 1) ((values) "bbbb")))
+
+ ; But not nonsense.
+ (()
+  (req (key "k") (id "Alice") (offset 2))
+  (http_status_code 404))
+ (()
+  (req (key "k") (id "Alice") ((values) "ddddd"))
+  (http_status_code 404))
+ (()
+  (req (key "k") (id "Bob") (offset 2))
+  (http_status_code 404))
+ (()
+  (req (key "k") (id "Bob") ((values) "ddddd"))
+  (http_status_code 404))
+
+ ; Wait 4 seconds. Data still there.
+ (()
+  (delta_ms 4000)
+  (req (key "k") (id "Alice") (offset 1))
+  (res (key "k") (id "Alice") (offset 1) ((values) "bbbb")))
+ (()
+  (req (key "k") (id "Bob") (offset 1))
+  (res (key "k") (id "Bob") (offset 1) ((values) "aa")))
+
+ ; With 1 millisecond remaining, both still get a good response.
+ (()
+  (delta_ms 999)
+  (req (key "k") (id "Alice") (offset 1))
+  (res (key "k") (id "Alice") (offset 1) ((values) "bbbb")))
+ (()
+  (req (key "k") (id "Bob") (offset 1))
+  (res (key "k") (id "Bob") (offset 1) ((values) "aa")))
+
+ ; After 1 more millisecond, the data expires.
+ (()
+  (delta_ms 1)
+  (req (key "k") (id "Alice") (offset 1))
+  (http_status_code 404))
+ (()
+  (req (key "k") (id "Bob") (offset 1))
+  (http_status_code 404))
+
+)

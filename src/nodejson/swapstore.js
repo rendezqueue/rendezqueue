@@ -74,10 +74,12 @@ class SwapStore {
     return original_slice.every((v, i) => values[i] == v);
   }
 
-  tryswap(key, id, offset, values, now_ms) {
+  tryswap(key, id, offset, values, now_ms, ttl = 0) {
     this.expire_unmatched_offers(now_ms);
     let answer_map = this.swapped_answer_multimap.get(key);
-    let ttl = this.ttl;
+    if (ttl === 0 || ttl > this.ttl) {
+      ttl = this.ttl;
+    }
 
     if (answer_map) {
       let answer = answer_map.get(id);

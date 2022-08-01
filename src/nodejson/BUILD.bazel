@@ -5,6 +5,7 @@ js_binary(
     name = "rendezqueue_nodejson",
     data = [
         ":main.js",
+        ":rendezqueue_json_impl.js",
         ":swapstore.js",
     ],
     entry_point = ":main.js",
@@ -19,7 +20,12 @@ sh_binary(
 
 # Export for testing.
 copy_to_bin(
+    name = "rendezqueue_json_impl_js",
+    srcs = ["rendezqueue_json_impl.js"],
+    visibility = ["//test:__subpackages__"],
+)
+copy_to_bin(
     name = "swapstore_js",
     srcs = ["swapstore.js"],
-    visibility = ["//test/nodejson:__subpackages__"],
+    visibility = ["//test:__subpackages__"],
 )

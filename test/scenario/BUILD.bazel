@@ -1,0 +1,18 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("scenario.bzl", "rendezqueue_scenario_test")
+
+bzl_library(
+    name = "scenario_bzl",
+    srcs = ["scenario.bzl"],
+)
+
+proto_library(
+    name = "scenario_proto",
+    srcs = ["scenario.proto"],
+    deps = ["//proto:rendezqueue_proto"],
+    testonly = 1,
+)
+
+rendezqueue_scenario_test(name = "basic")
+
