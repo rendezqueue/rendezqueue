@@ -42,7 +42,7 @@ class RendezqueueJsonImpl {
     this.swapstore = new SwapStore();
   }
 
-  TrySwap(msg, now_ms = undefined) {
+  TrySwap(msg, now_ms = null) {
     if (!msg) {
       return 400;
     }
@@ -63,7 +63,7 @@ class RendezqueueJsonImpl {
       return 413;
     }
 
-    if (now_ms === undefined) {
+    if (now_ms !== null) {
       let hrtime_now = process.hrtime();
       let now_ms = hrtime_now[0] * 1e3 + hrtime_now[1] / 1.0e9;
       if (now_ms == 0) {
