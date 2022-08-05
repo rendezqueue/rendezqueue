@@ -75,6 +75,9 @@ class SwapStore {
   }
 
   tryswap(key, id, offset, values, now_ms, ttl = 0) {
+    if (!Number.isInteger(now_ms)) {
+      return 500;
+    }
     this.expire_unmatched_offers(now_ms);
     let answer_map = this.swapped_answer_multimap.get(key);
     if (ttl === 0 || ttl > this.ttl) {

@@ -63,13 +63,14 @@ class RendezqueueJsonImpl {
       return 413;
     }
 
-    if (now_ms !== null) {
+    if (now_ms === null) {
       let hrtime_now = process.hrtime();
-      let now_ms = hrtime_now[0] * 1e3 + hrtime_now[1] / 1.0e9;
+      now_ms = hrtime_now[0] * 1e3 + hrtime_now[1] / 1.0e6;
       if (now_ms == 0) {
         // When would this actually return 0?
         return 500;
       }
+      now_ms = Math.floor(now_ms);
     }
 
     return this.swapstore.tryswap(key, id, offset, values, now_ms, msg.ttl);
