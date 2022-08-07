@@ -1,10 +1,11 @@
 version: "3"
 services:
-  nodejs:
+  app:
+    # Name the image.
+    image: rendezqueue_nodejson_http
     build:
       context: ../../src/nodejson/
       # Relative to context.
-      dockerfile: ../../deploy/plain_nodejson/Dockerfile
-    image: rendezqueue_plain_nodejson
+      dockerfile: ../../deploy/nodejson_http/Dockerfile
     ports:
       - "80:80"
