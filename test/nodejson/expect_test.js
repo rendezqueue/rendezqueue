@@ -24,13 +24,13 @@ try {
 for (let e of expectations) {
   let sstat = inplace_decode_tryswap_message(e.req);
   assert.strictEqual(sstat, "");
-  if (Number.isInteger(e.deltaMs)) {
-    timestamp_ms += e.deltaMs;
+  if (Number.isInteger(e.delta_ms)) {
+    timestamp_ms += e.delta_ms;
   }
   const debug_string = JSON.stringify(e);
   const result = rendezqueue_json_impl.TrySwap(e.req, timestamp_ms);
   if (Number.isInteger(result)) {
-    assert.equal(result, e.httpStatusCode, debug_string);
+    assert.equal(result, e.http_status_code, debug_string);
   } else if (e.res !== undefined) {
     sstat = inplace_decode_tryswap_message(e.res);
     assert.strictEqual(sstat, "");
