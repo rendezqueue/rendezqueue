@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  app:
+    # Name the image.
+    image: rendezqueue_dot_com
+    build:
+      context: ../../
+      # Relative to context.
+      dockerfile: ./deploy/rendezqueue.com/Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certbot_etc:/etc/letsencrypt
+
+volumes:
+  certbot_etc:
+    # Name this volume on the host for reuse.
+    name: certbot_etc
