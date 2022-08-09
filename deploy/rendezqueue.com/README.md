@@ -1,5 +1,7 @@
 # HTTPS rendezqueue.com
 
+This shows exactly how the https://rendezqueue.com/tryswap JSON endpoint is set up.
+
 ## Build
 
 ```shell
@@ -7,12 +9,9 @@
 docker compose build
 ```
 
-This will only run from a rendezqueue.com server,
 See the compose file for how to run, but it'll only work from a rendezqueue.com server (due to the SSL certificate signing step).
 
 ## Deploy to Google Compute Engine
-
-### Build and Push
 
 ```shell
 # Path to my container image in the Artifact Registry.
@@ -32,3 +31,6 @@ During creation, remember to:
 * Enable HTTP and HTTPS in the Firewall section.
 * Declare a Disk for the container's persistent data.
 * Declare that disk/volume to be mounted to `/etc/letsencrypt` in the Container.
+
+To update, just build and push a new container image and restart the VM.
+
