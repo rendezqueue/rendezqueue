@@ -1,6 +1,6 @@
 "use strict";
 
-const backend_url = "http://127.0.0.1:5480/";
+main();
 
 function stringify_tryswap_request(key, id, offset, values=[], ttl=1) {
   var d = {
@@ -36,7 +36,7 @@ function decode_response_cb(res) {
   });
 }
 
-function initial_rendezqueue_fetch(key, values, trial=0) {
+function initial_rendezqueue_fetch(backend_url, key, values, trial=0) {
   const TRIAL_COUNT_MAX = 3;
   if (trial >= TRIAL_COUNT_MAX) {
     return Promise.reject("too many retries");
@@ -52,13 +52,13 @@ function initial_rendezqueue_fetch(key, values, trial=0) {
     body: stringify_tryswap_request(key, id, 0, values),
   })
   .then(decode_response_cb)
-  .catch((error) => initial_rendezqueue_fetch(key, values, trial+1));
+  .catch((error) => initial_rendezqueue_fetch(backend_url, key, values, trial+1));
 }
 
-function doit_twice(key, values) {
+function doit_twice(backend_url, key, values) {
   return Promise.resolve()
   .then(() => {
-    return initial_rendezqueue_fetch(key, values);
+    return initial_rendezqueue_fetch(backend_url, key, values);
   })
   .then(d => {
     if (d.values) {
@@ -103,22 +103,50 @@ function doit_twice(key, values) {
   });
 }
 
-Promise.allSettled([
-  doit_twice("mykey", ["hello there"]),
-  doit_twice("mykey", ["nowai"]),
-])
-.then((results) => {
-  for (let result of results) {
-    if (result.value) {
-      handle_tryswap_response(
-          result.value.attempts.toString() + " attempt ",
-          result.value);
-    }
-    else {
-      const el = document.createElement("div");
-      el.innerText = "failed " + result.reason;
-      document.body.appendChild(el);
-    }
+function resolve_input_from_page_query(page_query, name, id, default_text) {
+  let s = page_query.get(name);
+  let e = document.getElementById(id);
+  if (s === null || s === "") {
+    s = default_text;
+    e.placeholder = s;
+  } else {
+    e.value = s;
   }
-})
+  return s;
+}
+
+function main() {
+  const page_query = new URLSearchParams(window.location.search);
+  const backend_url = resolve_input_from_page_query(
+      page_query, "url", "backend_url_input", 
+      "https://rendezqueue.com/tryswap");
+  const message_key = resolve_input_from_page_query(
+      page_query, "key", "message_key_input", 
+      "my_message_key");
+  const alice_message = resolve_input_from_page_query(
+      page_query, "alice", "alice_message_input", 
+      "Allo from Alice!");
+  const bob_message = resolve_input_from_page_query(
+      page_query, "bob", "bob_message_input", 
+      "Bonjour from Bob!");
+
+  Promise.allSettled([
+    doit_twice(backend_url, message_key, [alice_message]),
+    doit_twice(backend_url, message_key, [bob_message]),
+  ])
+  .then((results) => {
+    for (let result of results) {
+      if (result.value) {
+        handle_tryswap_response(
+            result.value.attempts.toString() + " attempt ",
+            result.value);
+      }
+      else {
+        const el = document.createElement("div");
+        el.innerText = "failed " + result.reason;
+        document.body.appendChild(el);
+      }
+    }
+  });
+}
 
