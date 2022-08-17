@@ -1,15 +1,57 @@
 
+cc_library(
+    name = "rendezqueue_protobuf_impl_cc",
+    srcs = [
+        "rendezqueue_protobuf_impl.cc",
+        "rendezqueue_protobuf_impl.hh",
+        "swapstore.cc",
+        "swapstore.hh",
+    ],
+    deps = [
+        "//proto:rendezqueue_cc_proto",
+        "@com_google_absl//absl/container:flat_hash_map",
+    ],
+    visibility = ["//test/scenario:__pkg__"],
+)
+
+cc_library(
+    name = "ssl_cred_cc",
+    srcs = [
+        "ssl_cred.cc",
+        "ssl_cred.hh",
+    ],
+    deps = [
+        "@com_github_grpc_grpc//:grpc++",
+    ],
+    visibility = ["//test/scenario:__pkg__"],
+)
+
+cc_binary(
+    name = "asyncserver",
+    srcs = [
+        "asyncserver.cc",
+    ],
+    deps = [
+        ":rendezqueue_protobuf_impl_cc",
+        ":ssl_cred_cc",
+        "//proto:rendezqueue_cc_grpc",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/flags:parse",
+    ],
+)
+
 cc_binary(
     name = "syncserver",
     srcs = [
         "syncserver.cc",
     ],
     deps = [
+        ":rendezqueue_protobuf_impl_cc",
+        ":ssl_cred_cc",
+        "//proto:rendezqueue_cc_grpc",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/flags:parse",
-        "//proto:rendezqueue_grpc_proto",
     ],
-    testonly = True,
 )
 
 cc_binary(
@@ -18,10 +60,10 @@ cc_binary(
         "syncclient.cc",
     ],
     deps = [
+        ":ssl_cred_cc",
+        "//proto:rendezqueue_cc_grpc",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/flags:parse",
-        "//proto:rendezqueue_grpc_proto",
     ],
-    testonly = True,
 )
 

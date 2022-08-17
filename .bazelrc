@@ -2,3 +2,9 @@ common --experimental_enable_bzlmod
 common --registry=https://raw.githubusercontent.com/rendezqueue/rendezqueue_bazel_registry/trunk
 common --registry=https://raw.githubusercontent.com/bazelbuild/bazel-central-registry/main
 
+# Valgrind.
+#build:valgrind --run_under='valgrind --trace-children=yes --track-fds=yes --leak-check=full --show-leak-kinds=all --track-origins=yes'
+build:valgrind --run_under='valgrind --trace-children=yes'
+build:valgrind --nocache_test_results
+build:valgrind --test_output=all
+build:valgrind -c dbg

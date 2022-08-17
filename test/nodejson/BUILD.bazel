@@ -1,4 +1,4 @@
-load("@aspect_rules_js//js:defs.bzl", "js_test")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test")
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 
 js_test(
@@ -28,10 +28,4 @@ js_test(
     ],
     entry_point = "tryswap_concat_test.js",
     size = "small",
-)
-
-copy_to_bin(
-    name = "expect_test_js",
-    srcs = ["expect_test.js"],
-    visibility = ["//test/scenario:__subpackages__"],
 )

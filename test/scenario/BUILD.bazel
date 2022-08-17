@@ -14,5 +14,23 @@ proto_library(
     testonly = 1,
 )
 
+cc_proto_library(
+    name = "scenario_cc_proto",
+    deps = [":scenario_proto"],
+    testonly = 1,
+)
+
+cc_binary(
+    name = "ccgrpc_expect",
+    srcs = [
+        "ccgrpc_expect.cc",
+    ],
+    deps = [
+        ":scenario_cc_proto",
+        "//src/ccgrpc:rendezqueue_protobuf_impl_cc",
+    ],
+    testonly = 1,
+)
+
 rendezqueue_scenario_test(name = "basic")
 

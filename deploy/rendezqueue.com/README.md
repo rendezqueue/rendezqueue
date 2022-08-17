@@ -5,6 +5,7 @@ This shows exactly how the https://rendezqueue.com/tryswap JSON endpoint is set 
 ## Build
 
 ```shell
+bazel build //...
 # Create an image named rendezqueue_dot_com.
 docker compose build
 ```
@@ -20,6 +21,7 @@ gcloud_container_image="us-central1-docker.pkg.dev/intrawake/intrawake-dock/rend
 # Alias for running `docker` as a different user.
 alias gcloud-docker="doas -u ${USER}-for-gcloud docker"
 
+bazel build //...
 gcloud-docker compose build
 gcloud-docker tag rendezqueue_dot_com ${gcloud_container_image}
 gcloud-docker push ${gcloud_container_image}

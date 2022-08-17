@@ -5,7 +5,7 @@ services:
     # Name the image.
     image: rendezqueue_dot_com
     build:
-      context: ../../
+      context: ../../bazel-bin
       # Relative to context.
       dockerfile: ./deploy/rendezqueue.com/Dockerfile
     ports:
