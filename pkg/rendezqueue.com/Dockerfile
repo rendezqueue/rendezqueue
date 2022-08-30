@@ -5,10 +5,10 @@ VOLUME /etc/letsencrypt
 RUN apk add certbot nodejs
 
 WORKDIR /etc/nginx/conf.d
-COPY deploy/rendezqueue.com/nginx_app.conf ./
+COPY pkg/rendezqueue.com/nginx_app.conf ./
 
 WORKDIR /app/html
-COPY deploy/rendezqueue.com/index.html ./
+COPY pkg/rendezqueue.com/index.html ./
 
 WORKDIR /app/html/demo/webdual
 COPY src/webdual/index.html ./
@@ -20,7 +20,7 @@ COPY src/nodejson/rendezqueue_json_impl.js ./
 COPY src/nodejson/swapstore.js ./
 
 WORKDIR /app
-COPY deploy/rendezqueue.com/entrypoint.sh ./
+COPY pkg/rendezqueue.com/entrypoint.sh ./
 
 ENTRYPOINT /app/entrypoint.sh
 CMD []

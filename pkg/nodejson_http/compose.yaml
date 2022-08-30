@@ -6,6 +6,6 @@ services:
     build:
       context: ../../src/nodejson/
       # Relative to context.
-      dockerfile: ../../deploy/nodejson_http/Dockerfile
+      dockerfile: ../../pkg/nodejson_http/Dockerfile
     ports:
       - "80:80"

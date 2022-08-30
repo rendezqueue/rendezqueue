@@ -22,7 +22,7 @@ docker kill ${container_id}
 
 ```shell
 # Build.
-(cd ../../src/nodejson && docker build . -t rendezqueue_nodejson_http -f ../../deploy/nodejson_http/Dockerfile)
+(cd ../../src/nodejson && docker build . -t rendezqueue_nodejson_http -f ../../pkg/nodejson_http/Dockerfile)
 ```
 
 ## Deploy to Google Compute Engine

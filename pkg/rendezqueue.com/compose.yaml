@@ -7,7 +7,7 @@ services:
     build:
       context: ../../bazel-bin
       # Relative to context.
-      dockerfile: ./deploy/rendezqueue.com/Dockerfile
+      dockerfile: ./pkg/rendezqueue.com/Dockerfile
     ports:
       - "80:80"
       - "443:443"
