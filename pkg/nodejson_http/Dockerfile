@@ -8,6 +8,5 @@ COPY main.js ./
 COPY rendezqueue_json_impl.js ./
 COPY swapstore.js ./
 
-ENTRYPOINT ["/nodejs/nodejs", "/app/main.js"]
-CMD ["--hostname=0.0.0.0", "--port=80"]
+CMD ["main.js", "--hostname=0.0.0.0", "--port=80"]
 
