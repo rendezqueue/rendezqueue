@@ -7,6 +7,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Cache Setup
+      uses: actions/cache@v3
+      id: cache-bazel
+      with:
+        path: ~/.cache/bazel
+        key: ${{ runner.os }}-bazel
+
     - name: Setup bazel
       uses: jwlawson/actions-setup-bazel@v1
       with:
