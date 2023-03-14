@@ -5,6 +5,7 @@
   ],
   "packageRules": [{
     "matchPackagePatterns": ["*"],
+    "branchPrefix": "renovate-fork/",
     "labels": ["dependencies"],
     "matchUpdateTypes": ["major", "minor", "patch"],
     // Group version update PRs into one.
