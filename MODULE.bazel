@@ -10,7 +10,7 @@ bazel_dep(name = "rules_proto", version = "4.0.0")
 
 bazel_dep(
     name = "abseil-cpp",
-    version = "20230802.0",
+    version = "20211102.0",
     repo_name = "com_google_absl")
 bazel_dep(
     name = "grpc",
