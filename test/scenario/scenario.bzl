@@ -5,7 +5,7 @@ load("@rules_sxproto//sxproto:defs.bzl", "sxproto_data")
 def rendezqueue_scenario_test(name):
   sxproto_data(
       name = name,
-      src = name + ".sxproto",
+      src = name + ".sxpb",
       out_json = name + ".json",
       proto_message = "rendezqueue.TrySwapScenario",
       proto_deps = [":scenario_proto"],
