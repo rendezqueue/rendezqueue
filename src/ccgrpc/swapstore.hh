@@ -21,7 +21,7 @@ class SwapStore {
   static const unsigned MAX_TTL_SECONDS = 20;
 
  private:
-  typedef std::pair<absl::string_view,absl::string_view> key_type;
+  typedef std::pair<std::string_view, std::string_view> key_type;
   absl::flat_hash_map<key_type,std::list<SwapStoreEntry>::iterator> entry_map_;
   std::list<SwapStoreEntry> entry_list_;
 
@@ -41,10 +41,14 @@ class SwapStore {
                   unsigned ttl, uint64_t now_ms);
 
   unsigned
-  tryswap(const std::string& key, const std::string& id, unsigned ttl,
-          unsigned offset,
-          const google::protobuf::RepeatedPtrField<std::string>& values,
-          uint64_t now_ms, TrySwapResponse* res);
+  tryswap(
+      std::string_view key,
+      std::string_view id,
+      unsigned ttl,
+      unsigned offset,
+      const google::protobuf::RepeatedPtrField<std::string>& values,
+      uint64_t now_ms,
+      TrySwapResponse* res);
 };
 
 }  // namespace rendezqueue

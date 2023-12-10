@@ -54,10 +54,14 @@ SwapStore::reset_entry_ttl(std::list<SwapStoreEntry>::iterator entry_it,
 }
 
   unsigned
-SwapStore::tryswap(const std::string& key, const std::string& id, unsigned ttl,
-                   unsigned offset,
-                   const google::protobuf::RepeatedPtrField<std::string>& values,
-                   uint64_t now_ms, TrySwapResponse* res)
+SwapStore::tryswap(
+    std::string_view key,
+    std::string_view id,
+    unsigned ttl,
+    unsigned offset,
+    const google::protobuf::RepeatedPtrField<std::string>& values,
+    uint64_t now_ms,
+    TrySwapResponse* res)
 {
   this->expire_entries(now_ms);
   if (ttl == 0 || ttl > this->MAX_TTL_SECONDS) {
@@ -73,7 +77,7 @@ SwapStore::tryswap(const std::string& key, const std::string& id, unsigned ttl,
       return 404;
     }
     auto offer_kv = entry_map.find(
-        std::pair<absl::string_view,absl::string_view>(key, ""));
+        std::pair<std::string_view,std::string_view>(key, ""));
     if (offer_kv == entry_map.end()) {
       // Create new offer.
       this->entry_list_.emplace_back();
@@ -83,8 +87,8 @@ SwapStore::tryswap(const std::string& key, const std::string& id, unsigned ttl,
       entry_it->offer_values = {values.begin(), values.end()};
       entry_it->expiry = now_ms + (uint64_t) ttl * 1000;
 
-      res->set_key(key);
-      res->set_id(id);
+      res->set_key(key.data(), key.size());
+      res->set_id(id.data(), id.size());
       res->set_ttl(ttl);
       res->set_offset(values.size());
 
@@ -101,8 +105,8 @@ SwapStore::tryswap(const std::string& key, const std::string& id, unsigned ttl,
       entry_it->answer_id = id;
       entry_it->answer_values = {values.begin(), values.end()};
 
-      res->set_key(key);
-      res->set_id(id);
+      res->set_key(key.data(), key.size());
+      res->set_id(id.data(), id.size());
       res->set_offset(entry_it->offer_values.size());
       *res->mutable_values() = {
         entry_it->offer_values.begin(),
@@ -122,8 +126,8 @@ SwapStore::tryswap(const std::string& key, const std::string& id, unsigned ttl,
         return 404;
       }
 
-      res->set_key(key);
-      res->set_id(id);
+      res->set_key(key.data(), key.size());
+      res->set_id(id.data(), id.size());
       if (entry_it->answer_id.empty()) {
         // No answer yet.
         this->reset_entry_ttl(entry_it, ttl, now_ms);
@@ -148,8 +152,8 @@ SwapStore::tryswap(const std::string& key, const std::string& id, unsigned ttl,
       if (!SwapStore::matches_original(entry_it->answer_values, offset, values)) {
         return 404;
       }
-      res->set_key(key);
-      res->set_id(id);
+      res->set_key(key.data(), key.size());
+      res->set_id(id.data(), id.size());
       res->set_offset(entry_it->offer_values.size());
       *res->mutable_values() = {
         entry_it->offer_values.begin(),
