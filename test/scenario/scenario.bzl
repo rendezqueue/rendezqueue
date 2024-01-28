@@ -1,5 +1,5 @@
 load("@aspect_rules_js//js:defs.bzl", "js_test")
-load("@fildesh//:def.bzl", "fildesh_test")
+load("@fildesh//tool/bazel:fildesh_test.bzl", "fildesh_test")
 load("@rules_sxproto//sxproto:defs.bzl", "sxproto_data")
 
 def rendezqueue_scenario_test(name):
@@ -27,10 +27,10 @@ def rendezqueue_scenario_test(name):
   fildesh_test(
       name = name + "_ccgrpc_expect_test",
       srcs = ["//test/scenario:ccgrpc_expect.fildesh"],
-      aliases = {
+      tool_by_alias = {
          "expect_test": "//test/scenario:ccgrpc_expect",
       },
-      named_inputs = {
+      input_by_option = {
           "scenario_data": ":" + name,
       }
   )

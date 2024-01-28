@@ -21,6 +21,11 @@ bazel_dep(
     name = "fildesh",
     version = "0.1.9",
     dev_dependency = True)
+git_override(
+    module_name = "fildesh",
+    remote = "https://github.com/fildesh/fildesh.git",
+    commit="f0841991085717aaeca83f09c41cd42ecf4abc34",
+)
 bazel_dep(
     name = "rules_sxproto",
     version = "0.0.4",
@@ -28,5 +33,5 @@ bazel_dep(
 git_override(
     module_name = "rules_sxproto",
     remote = "https://github.com/rendezqueue/rules_sxproto.git",
-    commit="d711b1ae3caebdad51e4eb0adcf1c47d647e7b51",
+    commit="92ad548bc4a4f08f5fe33eed92a34dd4b5b9e48b",
 )
