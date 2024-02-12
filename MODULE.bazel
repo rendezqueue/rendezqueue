@@ -11,7 +11,7 @@ bazel_dep(name = "rules_proto", version = "5.3.0-21.7")
 
 bazel_dep(
     name = "abseil-cpp",
-    version = "20240116.0",
+    version = "20240116.1",
     repo_name = "com_google_absl")
 bazel_dep(
     name = "grpc",
@@ -25,7 +25,7 @@ bazel_dep(
 git_override(
     module_name = "fildesh",
     remote = "https://github.com/fildesh/fildesh.git",
-    commit="f0841991085717aaeca83f09c41cd42ecf4abc34",
+    commit="9defdbec27700e01888d0834015e28947baba7cd",
 )
 bazel_dep(
     name = "rules_sxproto",
