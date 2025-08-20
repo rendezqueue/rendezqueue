@@ -14,4 +14,10 @@ license(
 exports_files([
     "LICENSE",
     "MODULE.bazel",
+    "pnpm-lock.yaml",
+    "package.json",
 ])
+
+load("@npm//:defs.bzl", "npm_link_all_packages")
+
+npm_link_all_packages(name = "node_modules")

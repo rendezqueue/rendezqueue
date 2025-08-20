@@ -9,3 +9,19 @@ bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "fildesh", version = "0.2.0")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
+
+bazel_dep(name = "rules_playwright", version = "0.4.0", dev_dependency = True)
+
+playwright = use_extension("@rules_playwright//playwright:extensions.bzl", "playwright")
+playwright.repo(
+    name = "playwright",
+    playwright_version = "1.54.2",
+)
+use_repo(playwright, "playwright")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+npm.npm_translate_lock(
+    name = "npm",
+    pnpm_lock = "//:pnpm-lock.yaml",
+)
+use_repo(npm, "npm")
