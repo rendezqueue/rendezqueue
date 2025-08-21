@@ -19,8 +19,8 @@ function inplace_decode_tryswap_message(msg) {
   if (msg.key === undefined) {msg.key = "";}
   else if (typeof(msg.key) != "string") {return "key";}
 
-  if (msg.id === undefined) {msg.id = "";}
-  else if (typeof(msg.id) != "string") {return "id";}
+  if (msg.sid === undefined) {msg.sid = "";}
+  else if (typeof(msg.sid) != "string") {return "sid";}
 
   if (msg.ttl === undefined) {msg.ttl = 0;}
   else if (!Number.isInteger(msg.ttl) || msg.ttl < 0) {return "ttl";}
@@ -32,7 +32,7 @@ function inplace_decode_tryswap_message(msg) {
   else if (!Array.isArray(msg.values)) {return "values";}
 
   msg.key = atob(msg.key);
-  msg.id = atob(msg.id);
+  msg.sid = atob(msg.sid);
   msg.values = msg.values.map(atob);
   return "";
 }
@@ -47,7 +47,7 @@ class RendezqueueJsonImpl {
       return 400;
     }
     let key = msg.key;
-    let id = msg.id;
+    let sid = msg.sid;
     let offset = msg.offset;
     let values = msg.values;
 
@@ -55,7 +55,7 @@ class RendezqueueJsonImpl {
       return 413;
     }
 
-    if (id.length > MAX_ID_BYTES) {
+    if (sid.length > MAX_ID_BYTES) {
       return 413;
     }
 
@@ -73,7 +73,7 @@ class RendezqueueJsonImpl {
       now_ms = Math.floor(now_ms);
     }
 
-    return this.swapstore.tryswap(key, id, offset, values, now_ms, msg.ttl);
+    return this.swapstore.tryswap(key, sid, offset, values, now_ms, msg.ttl);
   }
 
   TrySwap_string(request_text) {
@@ -93,7 +93,7 @@ class RendezqueueJsonImpl {
       return result;
     }
     result.key = btoa(result.key);
-    result.id = btoa(result.id);
+    result.sid = btoa(result.sid);
     if (result.values) {
       result.values = result.values.map(btoa);
     }

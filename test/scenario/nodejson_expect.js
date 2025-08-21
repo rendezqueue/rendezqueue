@@ -31,7 +31,8 @@ for (let e of expectations) {
   const result = rendezqueue_json_impl.TrySwap(e.req, timestamp_ms);
   if (Number.isInteger(result)) {
     assert.equal(result, e.http_status_code, debug_string);
-  } else if (e.res !== undefined) {
+  }
+  else {
     sstat = inplace_decode_tryswap_message(e.res);
     assert.strictEqual(sstat, "");
     if (e.res.ttl == 0) {
@@ -44,23 +45,5 @@ for (let e of expectations) {
       delete e.res.values;
     }
     assert.deepStrictEqual(result, e.res, debug_string);
-  } else {
-    sstat = inplace_decode_tryswap_message(e.has);
-    assert.strictEqual(sstat, "");
-    if (e.has.key) {
-      assert.strictEqual(result.key, e.has.key, debug_string);
-    }
-    if (e.has.id) {
-      assert.strictEqual(result.id, e.has.id, debug_string);
-    }
-    if (e.has.ttl) {
-      assert.strictEqual(result.ttl, e.has.ttl, debug_string);
-    }
-    if (e.has.offset) {
-      assert.strictEqual(result.offset, e.has.offset, debug_string);
-    }
-    if (e.has.values.length > 0) {
-      assert.deepStrictEqual(result.values, e.has.values, debug_string);
-    }
   }
 }

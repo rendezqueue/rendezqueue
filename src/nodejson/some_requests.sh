@@ -13,7 +13,7 @@ tryswap() {
 }
 
 # These strings are all base64.
-tryswap '{"key":"aw==","id":"QWxpY2U=","ttl":5,"values":["YWE="]}'
-tryswap '{"key":"aw==","id":"QWxpY2U=","ttl":5,"offset":1}'
-tryswap '{"key":"aw==","id":"Qm9i","ttl":5,"values":["YmJiYg=="]}'
-tryswap '{"key":"aw==","id":"QWxpY2U=","ttl":5,"offset":1}'
+tryswap '{"key":"aw==","sid":"QWxpY2U=","ttl":5,"values":["YWE="]}'
+tryswap '{"key":"aw==","sid":"QWxpY2U=","ttl":5,"offset":1}'
+tryswap '{"key":"aw==","sid":"Qm9i","ttl":5,"values":["YmJiYg=="]}'
+tryswap '{"key":"aw==","sid":"QWxpY2U=","ttl":5,"offset":1}'

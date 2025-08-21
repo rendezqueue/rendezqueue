@@ -2,10 +2,10 @@
 
 main();
 
-function stringify_tryswap_request(key, id, offset, values=[], ttl=1) {
+function stringify_tryswap_request(key, sid, offset, values=[], ttl=1) {
   var d = {
     key: btoa(key),
-    id: btoa(id),
+    sid: btoa(sid),
     offset: offset,
     values: values.map(btoa),
     ttl: ttl,
@@ -17,7 +17,7 @@ function handle_tryswap_response(pfx, d) {
   if (d && d.values) {
     for (let i = 0; i < d.values.length; ++i) {
       const el = document.createElement("div");
-      el.innerText = pfx + d.id.toString() + " " + i.toString() + ": " + d.values[i];
+      el.innerText = pfx + d.sid.toString() + " " + i.toString() + ": " + d.values[i];
       document.body.appendChild(el);
     }
   }
@@ -28,7 +28,7 @@ function decode_response_cb(res) {
   .then((msg) => {
     msg = Object.assign({}, msg);
     msg.key = atob(msg.key);
-    msg.id = atob(msg.id);
+    msg.sid = atob(msg.sid);
     if (msg.values) {
       msg.values = msg.values.map(atob);
     }
@@ -43,13 +43,13 @@ function initial_rendezqueue_fetch(backend_url, key, values, trial=0) {
   }
   const RENDEZQUEUE_ID_MAX = 65535;
   /* const RENDEZQUEUE_ID_MAX = 16; */
-  let id = Math.floor(Math.random() * (RENDEZQUEUE_ID_MAX+1)).toString();
+  let sid = Math.floor(Math.random() * (RENDEZQUEUE_ID_MAX+1)).toString();
   return fetch(backend_url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: stringify_tryswap_request(key, id, 0, values),
+    body: stringify_tryswap_request(key, sid, 0, values),
   })
   .then(decode_response_cb)
   .catch((error) => initial_rendezqueue_fetch(backend_url, key, values, trial+1));
@@ -70,7 +70,7 @@ function doit_twice(backend_url, key, values) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: stringify_tryswap_request(key, d.id, values.length, []),
+      body: stringify_tryswap_request(key, d.sid, values.length, []),
     })
     .then(decode_response_cb);
   })
@@ -88,7 +88,7 @@ function doit_twice(backend_url, key, values) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: stringify_tryswap_request(key, d.id, values.length, []),
+      body: stringify_tryswap_request(key, d.sid, values.length, []),
     }))
     .then(decode_response_cb);
   })
