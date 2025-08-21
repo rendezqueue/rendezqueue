@@ -1,4 +1,4 @@
-(expectations (())
+ (())
 
  (()
   (req (key "k") (id "Alice") (ttl 5) (values (()) "aa"))
@@ -61,5 +61,3 @@
  (()
   (req (key "k") (id "Bob") (offset 1))
   (http_status_code 404))
-
-)

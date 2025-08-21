@@ -9,10 +9,9 @@ bzl_library(
 
 proto_library(
     name = "scenario_proto",
+    testonly = True,
     srcs = ["scenario.proto"],
     deps = ["//proto:rendezqueue_proto"],
-    testonly = 1,
 )
 
 rendezqueue_scenario_test(name = "basic")
-
