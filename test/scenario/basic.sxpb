@@ -26,6 +26,16 @@
  (res (key "k") (sid "Alice") (offset 1) (values (()) "bbbb"))
 )
 
+; Both still get a good response with base64url-encoded strings.
+(()
+ (req (b64 7) (key "aw") (sid "Qm9i") (values (()) "YmJiYg"))
+ (res (b64 7) (key "aw") (sid "Qm9i") (offset 1) (values (()) "YWE"))
+)
+(()
+ (req (b64 7) (key "aw") (sid "QWxpY2U") (values (()) "YWE"))
+ (res (b64 7) (key "aw") (sid "QWxpY2U") (offset 1) (values (()) "YmJiYg"))
+)
+
 ; But not nonsense.
 (()
  (req (key "k") (sid "Alice") (offset 2))

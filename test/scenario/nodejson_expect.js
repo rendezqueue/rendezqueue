@@ -7,6 +7,7 @@ const rendezqueue_json_impl_exports = require(RENDEZQUEUE_IMPL_PATH);
 
 const RendezqueueJsonImpl = rendezqueue_json_impl_exports.RendezqueueJsonImpl;
 const inplace_decode_tryswap_message = rendezqueue_json_impl_exports.inplace_decode_tryswap_message;
+const inplace_encode_tryswap_message = rendezqueue_json_impl_exports.inplace_encode_tryswap_message;
 
 let rendezqueue_json_impl = new RendezqueueJsonImpl();
 let timestamp_ms = 0;
@@ -22,28 +23,18 @@ try {
 }
 
 for (let e of expectations) {
+  const debug_string = JSON.stringify(e);
   let sstat = inplace_decode_tryswap_message(e.req);
   assert.strictEqual(sstat, "");
   if (Number.isInteger(e.delta_ms)) {
     timestamp_ms += e.delta_ms;
   }
-  const debug_string = JSON.stringify(e);
-  const result = rendezqueue_json_impl.TrySwap(e.req, timestamp_ms);
+  let result = rendezqueue_json_impl.TrySwap(e.req, timestamp_ms);
   if (Number.isInteger(result)) {
     assert.equal(result, e.http_status_code, debug_string);
   }
   else {
-    sstat = inplace_decode_tryswap_message(e.res);
-    assert.strictEqual(sstat, "");
-    if (e.res.ttl == 0) {
-      delete e.res.ttl;
-    }
-    if (e.res.offset == 0) {
-      delete e.res.offset;
-    }
-    if (e.res.values.length == 0) {
-      delete e.res.values;
-    }
+    inplace_encode_tryswap_message(result);
     assert.deepStrictEqual(result, e.res, debug_string);
   }
 }

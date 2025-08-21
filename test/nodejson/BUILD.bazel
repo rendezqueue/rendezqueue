@@ -1,31 +1,30 @@
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test")
-load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 
 js_test(
     name = "bytestring_test",
+    size = "small",
     data = [
         "bytestring_test.js",
     ],
     entry_point = "bytestring_test.js",
-    size = "small",
 )
 
 js_test(
     name = "swapstore_test",
+    size = "small",
     data = [
         "swapstore_test.js",
         "//src/nodejson:swapstore_js",
     ],
     entry_point = "swapstore_test.js",
-    size = "small",
 )
 
 js_test(
     name = "tryswap_concat_test",
+    size = "small",
     data = [
         "tryswap_concat_test.js",
         "//src/nodejson:swapstore_js",
     ],
     entry_point = "tryswap_concat_test.js",
-    size = "small",
 )
