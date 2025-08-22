@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Rendezqueue WebRTC Chat</title>
+  <style>
+    body { font-family: sans-serif; }
+    #chat-log { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; }
+    .message { margin-bottom: 5px; }
+    .message.mine { text-align: right; color: blue; }
+    .message.theirs { text-align: left; color: green; }
+    #controls { margin-top: 10px; }
+    input[type="text"] { width: 100%; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+
+  <h1>Rendezqueue WebRTC Chat</h1>
+
+  <div id="chat-log"></div>
+
+  <div id="controls">
+    <form id="chat-form" autocomplete="off">
+      <input type="text" id="message-input" placeholder="Type a message..." />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <hr>
+
+  <div>
+    <h3>Settings</h3>
+    <form id="settings-form" autocomplete="off">
+      <div>
+        <label for="backend-url-input">Backend URL:</label>
+        <input type="text" id="backend-url-input" size="50" />
+      </div>
+      <div>
+        <label for="room-key-input">Room Key:</label>
+        <input type="text" id="room-key-input" size="50" />
+      </div>
+    </form>
+  </div>
+
+  <script type="text/javascript" src="/rendezqueue_client.js"></script>
+  <script type="text/javascript" src="script.js"></script>
+
+</body>
+</html>

@@ -5,7 +5,7 @@ import { SwapStore } from "./swapstore.js";
 
 const MAX_KEY_BYTES = 100;
 const MAX_ID_BYTES = 100;
-const MAX_VALUE_BYTES = 1000;
+const MAX_VALUE_BYTES = 100000;
 
 
 function btoa(s) {
