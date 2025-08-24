@@ -13,13 +13,20 @@ js_library(
     deps = ["swapstore_js"],
 )
 
+js_library(
+    name = "main_js",
+    srcs = ["main.js"],
+    visibility = ["//test:__subpackages__"],
+    deps = [":rendezqueue_json_impl_js"],
+)
+
 js_binary(
     name = "rendezqueue_nodejson",
     data = [
-        ":main.js",
-        ":rendezqueue_json_impl_js",
+        ":main_js",
     ],
     entry_point = ":main.js",
+    visibility = ["//test:__subpackages__"],
 )
 
 sh_binary(

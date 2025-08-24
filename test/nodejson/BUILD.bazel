@@ -10,6 +10,17 @@ js_test(
 )
 
 js_test(
+    name = "main_test",
+    size = "small",
+    data = [
+        "main_test.js",
+        "//src/nodejson:main_js",
+        "//test/scenario:webchat.json",
+    ],
+    entry_point = "main_test.js",
+)
+
+js_test(
     name = "swapstore_test",
     size = "small",
     data = [

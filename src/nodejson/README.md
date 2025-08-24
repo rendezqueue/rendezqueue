@@ -2,8 +2,8 @@
 Start the server in one shell.
 
 ```shell
-bazel run //src/nodejson:rendezqueue_nodejson
-# Or just run `nodejs main.js` in this directory.
+bazel run //src/nodejson:rendezqueue_nodejson -- --port=5480
+# Or just run `nodejs main.js --port=5480` in this directory.
 # Server running at http://127.0.0.1:5480/
 ```
 

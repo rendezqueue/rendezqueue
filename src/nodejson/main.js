@@ -4,6 +4,7 @@ const http = require("http");
 const path = require("path");
 const querystring = require("querystring");
 const url = require("url");
+const fs = require("fs");
 const RendezqueueJsonImpl = require(path.join(__dirname, "rendezqueue_json_impl")).RendezqueueJsonImpl;
 
 
@@ -12,7 +13,6 @@ let rendezqueue_json_impl = new RendezqueueJsonImpl();
 // Flags.
 let argmap = new Map();
 argmap.set("hostname", "127.0.0.1");
-argmap.set("port", "5480");
 
 for (let i = 2; i < process.argv.length; ++i) {
   const arg = process.argv[i];
@@ -25,14 +25,16 @@ for (let i = 2; i < process.argv.length; ++i) {
     console.log("Need flags to have equal sign.");
     process.exit(64);
   }
-  argmap.set(arg.slice(2, eqidx), arg.slice(eqidx+1));
+  const argkey = arg.slice(2, eqidx);
+  const argval = arg.slice(eqidx+1);
+  argmap.set(argkey.replaceAll("-", "_"), argval);
 }
 
 const hostname = argmap.get("hostname");
-const port = parseInt(argmap.get("port"));
+const port_filepath = argmap.get("o_port");
+let port = parseInt(argmap.get("port"), 10);
 if (Number.isNaN(port)) {
-  console.log("Bad port.");
-  process.exit(64);
+  port = 0; // Default to 0 if not provided or not a number
 }
 // End flags.
 
@@ -89,6 +91,10 @@ function handle_request_cb(req, res) {
 
 var server = http.createServer(handle_request_cb);
 server.listen(port, hostname, () => {
-  console.log("Server running at http://" + hostname + ":" + port + "/");
+  const chosen_port = server.address().port;
+  console.log(`Server running at http://${hostname}:${chosen_port}/`);
+  if (port_filepath) {
+    fs.writeFileSync(port_filepath, chosen_port.toString());
+  }
 });
 
