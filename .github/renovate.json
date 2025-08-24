@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base"],
+  "packageRules": [{
+    "labels": ["dependencies"],
+    "groupName": "all dependencies",
+    "groupSlug": "all-dependencies",
+    "matchUpdateTypes": ["major", "minor", "patch"],
+    "matchPackagePatterns": ["*"]
+  }, {
+    "enabled": false,
+    "matchDepNames": ["aspect_rules_js"]
+  }]
+}

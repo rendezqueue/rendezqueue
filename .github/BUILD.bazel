@@ -1,0 +1,17 @@
+load("@fildesh//tool/bazel:cmptxt_test.bzl", "cmptxt_test")
+load("@fildesh//tool/bazel:sxpb2json.bzl", "sxpb2json")
+
+sxpb2json(
+    name = "renovate_json",
+    testonly = 1,
+    src = "renovate.sxpb",
+    out = "renovate_sxpb.json",
+)
+
+cmptxt_test(
+    name = "renovate_cmptxt_test",
+    srcs = [
+        "renovate.json",
+        "renovate_sxpb.json",
+    ],
+)

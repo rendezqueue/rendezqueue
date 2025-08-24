@@ -1,0 +1,17 @@
+("$schema" "https://docs.renovatebot.com/renovate-schema.json")
+(extends (()) config:base)
+(packageRules (())
+ (()
+  (matchPackagePatterns (()) "*")
+  (labels (()) dependencies)
+  ; Group version update PRs into one.
+  (matchUpdateTypes (()) major minor patch)
+  (groupName all dependencies)
+  (groupSlug all-dependencies)
+ )
+ (()
+  ; Do not update aspect_rules_js past v2.4.0 to avoid reporting telemetry.
+  (matchDepNames (()) aspect_rules_js)
+  (enabled +false)
+ )
+)
