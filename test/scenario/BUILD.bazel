@@ -15,3 +15,4 @@ proto_library(
 )
 
 rendezqueue_scenario_test(name = "basic")
+rendezqueue_scenario_test(name = "webchat")

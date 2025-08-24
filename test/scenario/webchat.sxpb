@@ -1,0 +1,87 @@
+(())
+
+; 1. Alice sends "A1".
+(()
+ (req (b64 1) (key "test-room") (sid "Alice-1") (ttl 5) (values (()) "QTE"))
+ (res (key "test-room") (sid "Alice-1") (ttl 5) (offset 1))
+)
+
+; 2. Alice sends "A2", appending to her offer.
+(()
+ (req (b64 1) (key "test-room") (sid "Alice-1") (ttl 5) (offset 1) (values (()) "QTI"))
+ (res (key "test-room") (sid "Alice-1") (ttl 5) (offset 2))
+)
+
+; 3. Bob sends "B1", swaps with Alice's offer of "A1" and "A2".
+(()
+ (req (b64 1) (key "test-room") (sid "Bob-1") (ttl 5) (values (()) "QjE"))
+ (res (b64 1) (key "test-room") (sid "Bob-1") (offset 1) (values (()) "QTE" "QTI"))
+)
+
+; 4. Bob starts a new session ("Bob-2") and polls for messages. Gets none.
+(()
+ (req (b64 1) (key "test-room") (sid "Bob-2") (ttl 5))
+ (res (key "test-room") (sid "Bob-2") (ttl 5))
+)
+
+; 5. Bob ("Bob-2") sends "B2".
+(()
+ (req (b64 1) (key "test-room") (sid "Bob-2") (ttl 5) (values (()) "QjI"))
+ (res (key "test-room") (sid "Bob-2") (ttl 5) (offset 1))
+)
+
+; 6. Bob ("Bob-2") sends "B3", appending to his new offer.
+(()
+ (req (b64 1) (key "test-room") (sid "Bob-2") (ttl 5) (offset 1) (values (()) "QjM"))
+ (res (key "test-room") (sid "Bob-2") (ttl 5) (offset 2))
+)
+
+; 7. Alice ("Alice-1") tries to send "A3" to the old session.
+; The server rejects "A3" by not incrementing the offset, but returns "B1".
+(()
+ (req (b64 1) (key "test-room") (sid "Alice-1") (ttl 5) (offset 2) (values (()) "QTM"))
+ (res (b64 1) (key "test-room") (sid "Alice-1") (offset 2) (values (()) "QjE"))
+)
+
+; 8. Alice starts a new session ("Alice-2"), sends "A3", and gets Bob's pending messages.
+(()
+ (req (b64 1) (key "test-room") (sid "Alice-2") (ttl 5) (values (()) "QTM"))
+ (res (b64 1) (key "test-room") (sid "Alice-2") (offset 1) (values (()) "QjI" "QjM"))
+)
+
+; 9. Alice starts a new session ("Alice-3"), sends "A4".
+(()
+ (req (b64 1) (key "test-room") (sid "Alice-3") (ttl 5) (values (()) "QTQ"))
+ (res (key "test-room") (sid "Alice-3") (ttl 5) (offset 1))
+)
+
+; 10. Alice ("Alice-3") sends "A5", appending to her offer.
+(()
+ (req (b64 1) (key "test-room") (sid "Alice-3") (ttl 5) (offset 1) (values (()) "QTU"))
+ (res (key "test-room") (sid "Alice-3") (ttl 5) (offset 2))
+)
+
+; 11. Bob ("Bob-2") polls to get the result of his swap with "Alice-2".
+(()
+ (req (b64 1) (key "test-room") (sid "Bob-2") (offset 2))
+ (res (b64 1) (key "test-room") (sid "Bob-2") (offset 2) (values (()) "QTM"))
+)
+
+; 12. Bob starts a new session ("Bob-3") and polls, swapping with Alice's pending offer.
+; The response has no offset because the request had no values.
+(()
+ (req (b64 1) (key "test-room") (sid "Bob-3") (ttl 5))
+ (res (b64 1) (key "test-room") (sid "Bob-3") (values (()) "QTQ" "QTU"))
+)
+
+; 13. Alice ("Alice-3") polls to get the result of her swap with "Bob-3".
+(()
+ (req (b64 1) (key "test-room") (sid "Alice-3") (offset 2))
+ (res (key "test-room") (sid "Alice-3") (offset 2))
+)
+
+; 14. Alice starts a new session ("Alice-4") and polls, gets nothing.
+(()
+ (req (b64 1) (key "test-room") (sid "Alice-4") (ttl 5))
+ (res (key "test-room") (sid "Alice-4") (ttl 5))
+)

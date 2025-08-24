@@ -65,7 +65,7 @@ res = swapstore.tryswap("kk", "1sid", 1, [], 1);
 assert.equal(res.key, "kk");
 assert.equal(res.sid, "1sid");
 assert.equal(res.offset, 1);
-assert.equal(res.values.length, 0);
+assert.ok(!("values" in res));
 
 swapstore.expire_unmatched_offers(30000);
 

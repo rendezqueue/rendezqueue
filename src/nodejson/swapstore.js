@@ -88,12 +88,15 @@ class SwapStore {
       let answer = answer_map.get(sid);
       if (answer) {
         if (SwapStore.matches_original(answer.original_values, offset, values)) {
-          return {
+          let result = {
             key: key,
             sid: sid,
             offset: answer.original_values.length,
-            values: answer.values,
           };
+          if (answer.values.length > 0) {
+            result.values = answer.values;
+          }
+          return result;
         }
         return 404;
       }
