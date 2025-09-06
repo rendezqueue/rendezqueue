@@ -12,7 +12,8 @@ let rendezqueue_json_impl = new RendezqueueJsonImpl();
 
 // Flags.
 let argmap = new Map();
-argmap.set("hostname", "127.0.0.1");
+argmap.set("http_host", "127.0.0.1");
+argmap.set("http_path", "/");
 
 for (let i = 2; i < process.argv.length; ++i) {
   const arg = process.argv[i];
@@ -30,9 +31,9 @@ for (let i = 2; i < process.argv.length; ++i) {
   argmap.set(argkey.replaceAll("-", "_"), argval);
 }
 
-const hostname = argmap.get("hostname");
-const port_filepath = argmap.get("o_port");
-let port = parseInt(argmap.get("port"), 10);
+const http_host = argmap.get("http_host");
+const port_filepath = argmap.get("o_http_port");
+let port = parseInt(argmap.get("http_port"), 10);
 if (Number.isNaN(port)) {
   port = 0; // Default to 0 if not provided or not a number
 }
@@ -68,6 +69,12 @@ function respond_json_string_http(http_code, response_text, res) {
 }
 
 function handle_request_cb(req, res) {
+  const http_path = argmap.get("http_path");
+  const parsed_url = url.parse(req.url);
+  if (parsed_url.pathname !== http_path) {
+    respond_json_string_http(404, "", res);
+    return;
+  }
   if (req.method == "OPTIONS" && req.headers["access-control-request-method"] === "POST") {
     respond_options_http(req, res);
   }
@@ -90,9 +97,9 @@ function handle_request_cb(req, res) {
 
 
 var server = http.createServer(handle_request_cb);
-server.listen(port, hostname, () => {
+server.listen(port, http_host, () => {
   const chosen_port = server.address().port;
-  console.log(`Server running at http://${hostname}:${chosen_port}/`);
+  console.log(`Server running at http://${http_host}:${chosen_port}/`);
   if (port_filepath) {
     fs.writeFileSync(port_filepath, chosen_port.toString());
   }

@@ -2,18 +2,32 @@
 
 set -e
 
-backend_url="http://127.0.0.1:5480/"
-if [ -n "$1" ]; then
-  backend_url="$1"
-fi
+url="http://127.0.0.1:5480/"
+
+while [ 0 -lt "$#" ]; do
+  arg="$1"
+  case "${arg}" in
+    --url=*)
+      url="${arg#--url=}"
+      ;;
+    --url)
+      shift
+      url="$1"
+      ;;
+    *)
+      echo "unknown argument: ${arg}" >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
 
 tryswap() {
-  curl -i -X POST -H 'Content-Type: application/json' -d "$1" "$backend_url"
+  curl -i -X POST -H 'Content-Type: application/json' -d "$1" "$url"
   printf "\n\n\n"
 }
 
-# These strings are all base64.
-tryswap '{"key":"aw==","sid":"QWxpY2U=","ttl":5,"values":["YWE="]}'
-tryswap '{"key":"aw==","sid":"QWxpY2U=","ttl":5,"offset":1}'
-tryswap '{"key":"aw==","sid":"Qm9i","ttl":5,"values":["YmJiYg=="]}'
-tryswap '{"key":"aw==","sid":"QWxpY2U=","ttl":5,"offset":1}'
+tryswap '{"key":"test_key","sid":"Alice","ttl":5,"values":["aa"]}'
+tryswap '{"key":"test_key","sid":"Alice","ttl":5,"offset":1}'
+tryswap '{"key":"test_key","sid":"Bob","ttl":5,"values":["bbbb"]}'
+tryswap '{"b64":1,"key":"test_key","sid":"Alice","ttl":5,"offset":1}'

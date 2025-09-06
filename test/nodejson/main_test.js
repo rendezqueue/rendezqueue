@@ -56,9 +56,9 @@ async function main() {
   try {
     const args = [
       main_js_filepath,
-      '--port=0',
-      `--o_port=${port_filepath}`,
-    ]
+      '--http_port=0',
+      `--o-http-port=${port_filepath}`,
+    ];
     server = spawn(process.execPath, args, {
       stdio: ['ignore', 'inherit', 'inherit'] // pipe server stdout/stderr
     });
