@@ -1,13 +1,10 @@
-"use strict";
-const RENDEZQUEUE_IMPL_PATH = __dirname + "/../../src/nodejson/rendezqueue_json_impl";
-
-const assert = require("assert").strict;
-const fs = require("fs");
-const rendezqueue_json_impl_exports = require(RENDEZQUEUE_IMPL_PATH);
-
-const RendezqueueJsonImpl = rendezqueue_json_impl_exports.RendezqueueJsonImpl;
-const inplace_decode_tryswap_message = rendezqueue_json_impl_exports.inplace_decode_tryswap_message;
-const inplace_encode_tryswap_message = rendezqueue_json_impl_exports.inplace_encode_tryswap_message;
+import { strict as assert } from "assert";
+import * as fs from "fs";
+import {
+  RendezqueueJsonImpl,
+  inplace_decode_tryswap_message,
+  inplace_encode_tryswap_message,
+} from "../../src/nodejson/rendezqueue_json_impl.js";
 
 let rendezqueue_json_impl = new RendezqueueJsonImpl();
 let timestamp_ms = 0;
@@ -32,8 +29,7 @@ for (let e of expectations) {
   let result = rendezqueue_json_impl.TrySwap(e.req, timestamp_ms);
   if (Number.isInteger(result)) {
     assert.equal(result, e.http_status_code, debug_string);
-  }
-  else {
+  } else {
     inplace_encode_tryswap_message(result);
     assert.deepStrictEqual(result, e.res, debug_string);
   }

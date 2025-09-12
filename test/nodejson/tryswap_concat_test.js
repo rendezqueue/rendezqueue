@@ -1,8 +1,6 @@
-"use strict";
-const SWAPSTORE_PATH = __dirname + "/../../src/nodejson/swapstore";
 
-const assert = require("assert").strict;
-const SwapStore = require(SWAPSTORE_PATH).SwapStore;
+import { strict as assert } from "assert";
+import { SwapStore } from "../../src/nodejson/swapstore.js";
 
 var swapstore = new SwapStore();
 

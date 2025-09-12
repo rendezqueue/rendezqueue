@@ -1,4 +1,3 @@
-"use strict";
 
 const MAX_TTL_SECONDS = 20;
 
@@ -48,7 +47,7 @@ class SwapStore {
 
   /** No takers.**/
   expire_unmatched_offers(now_ms) {
-    let expiring_offers = []
+    let expiring_offers = [];
     for (const [key, v] of this.unmatched_offer_map) {
       if (v.expiry_ms > now_ms) {
         break;
@@ -183,5 +182,5 @@ class SwapStore {
   }
 }
 
-exports.SwapStore = SwapStore;
+export { SwapStore };
 

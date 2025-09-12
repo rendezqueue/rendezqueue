@@ -1,11 +1,8 @@
-"use strict";
 
-const http = require("http");
-const path = require("path");
-const querystring = require("querystring");
-const url = require("url");
-const fs = require("fs");
-const RendezqueueJsonImpl = require(path.join(__dirname, "rendezqueue_json_impl")).RendezqueueJsonImpl;
+import * as http from "http";
+import * as url from "url";
+import * as fs from "fs";
+import { RendezqueueJsonImpl } from "./rendezqueue_json_impl.js";
 
 
 let rendezqueue_json_impl = new RendezqueueJsonImpl();
@@ -77,10 +74,11 @@ function handle_request_cb(req, res) {
   }
   if (req.method == "OPTIONS" && req.headers["access-control-request-method"] === "POST") {
     respond_options_http(req, res);
-  }
-  else if (req.method == "POST" && req.headers["content-type"] === "application/json") {
-    let body = '';
-    req.on("data", chunk => { body += chunk.toString(); });
+  } else if (req.method == "POST" && req.headers["content-type"] === "application/json") {
+    let body = "";
+    req.on("data", chunk => {
+      body += chunk.toString();
+    });
     req.on("end", () => {
       let result = rendezqueue_json_impl.TrySwap_string(body);
       if (Number.isInteger(result)) {
@@ -89,8 +87,7 @@ function handle_request_cb(req, res) {
         respond_json_string_http(200, result, res);
       }
     });
-  }
-  else {
+  } else {
     respond_json_string_http(418, "", res);
   }
 }

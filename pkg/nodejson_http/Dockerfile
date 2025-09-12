@@ -5,6 +5,7 @@ FROM gcr.io/distroless/nodejs:latest
 WORKDIR /app
 
 COPY main.js ./
+COPY package.json ./
 COPY rendezqueue_json_impl.js ./
 COPY swapstore.js ./
 

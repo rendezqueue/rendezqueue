@@ -1,4 +1,4 @@
-"use strict";
+
 
 main();
 
@@ -25,15 +25,15 @@ function handle_tryswap_response(pfx, d) {
 
 function decode_response_cb(res) {
   return res.json()
-  .then((msg) => {
-    msg = Object.assign({}, msg);
-    msg.key = atob(msg.key);
-    msg.sid = atob(msg.sid);
-    if (msg.values) {
-      msg.values = msg.values.map(atob);
-    }
-    return Promise.resolve(msg);
-  });
+    .then((msg) => {
+      msg = Object.assign({}, msg);
+      msg.key = atob(msg.key);
+      msg.sid = atob(msg.sid);
+      if (msg.values) {
+        msg.values = msg.values.map(atob);
+      }
+      return Promise.resolve(msg);
+    });
 }
 
 function initial_rendezqueue_fetch(backend_url, key, values, trial=0) {
@@ -51,56 +51,56 @@ function initial_rendezqueue_fetch(backend_url, key, values, trial=0) {
     },
     body: stringify_tryswap_request(key, sid, 0, values),
   })
-  .then(decode_response_cb)
-  .catch((error) => initial_rendezqueue_fetch(backend_url, key, values, trial+1));
+    .then(decode_response_cb)
+    .catch(() => initial_rendezqueue_fetch(backend_url, key, values, trial+1));
 }
 
 function doit_twice(backend_url, key, values) {
   return Promise.resolve()
-  .then(() => {
-    return initial_rendezqueue_fetch(backend_url, key, values);
-  })
-  .then(d => {
-    if (d.values) {
-      d.attempts = 1;
-      return Promise.resolve(d);
-    }
-    return fetch(backend_url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: stringify_tryswap_request(key, d.sid, values.length, []),
+    .then(() => {
+      return initial_rendezqueue_fetch(backend_url, key, values);
     })
-    .then(decode_response_cb);
-  })
-  .then(d => {
-    if (d.values) {
-      if (!d.attempts) {
-        d.attempts = 2;
+    .then(d => {
+      if (d.values) {
+        d.attempts = 1;
+        return Promise.resolve(d);
       }
-      return Promise.resolve(d);
-    }
-    return (
+      return fetch(backend_url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: stringify_tryswap_request(key, d.sid, values.length, []),
+      })
+        .then(decode_response_cb);
+    })
+    .then(d => {
+      if (d.values) {
+        if (!d.attempts) {
+          d.attempts = 2;
+        }
+        return Promise.resolve(d);
+      }
+      return (
         new Promise((resolve) => setTimeout(() => resolve(), 200))
-    ).then(() => fetch(backend_url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: stringify_tryswap_request(key, d.sid, values.length, []),
-    }))
-    .then(decode_response_cb);
-  })
-  .then(d => {
-    if (d.values) {
-      if (!d.attempts) {
-        d.attempts = 2;
+      ).then(() => fetch(backend_url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: stringify_tryswap_request(key, d.sid, values.length, []),
+      }))
+        .then(decode_response_cb);
+    })
+    .then(d => {
+      if (d.values) {
+        if (!d.attempts) {
+          d.attempts = 2;
+        }
+        return Promise.resolve(d);
       }
-      return Promise.resolve(d);
-    }
-    return Promise.reject("still failed after delay");
-  });
+      return Promise.reject("still failed after delay");
+    });
 }
 
 function resolve_input_from_page_query(page_query, name, id, default_text) {
@@ -118,35 +118,34 @@ function resolve_input_from_page_query(page_query, name, id, default_text) {
 function main() {
   const page_query = new URLSearchParams(window.location.search);
   const backend_url = resolve_input_from_page_query(
-      page_query, "url", "backend_url_input", 
-      "https://rendezqueue.com/tryswap");
+    page_query, "url", "backend_url_input",
+    "https://rendezqueue.com/tryswap");
   const message_key = resolve_input_from_page_query(
-      page_query, "key", "message_key_input", 
-      "my_message_key");
+    page_query, "key", "message_key_input",
+    "my_message_key");
   const alice_message = resolve_input_from_page_query(
-      page_query, "alice", "alice_message_input", 
-      "Allo from Alice!");
+    page_query, "alice", "alice_message_input",
+    "Allo from Alice!");
   const bob_message = resolve_input_from_page_query(
-      page_query, "bob", "bob_message_input", 
-      "Bonjour from Bob!");
+    page_query, "bob", "bob_message_input",
+    "Bonjour from Bob!");
 
   Promise.allSettled([
     doit_twice(backend_url, message_key, [alice_message]),
     doit_twice(backend_url, message_key, [bob_message]),
   ])
-  .then((results) => {
-    for (let result of results) {
-      if (result.value) {
-        handle_tryswap_response(
+    .then((results) => {
+      for (let result of results) {
+        if (result.value) {
+          handle_tryswap_response(
             result.value.attempts.toString() + " attempt ",
             result.value);
+        } else {
+          const el = document.createElement("div");
+          el.innerText = "failed " + result.reason;
+          document.body.appendChild(el);
+        }
       }
-      else {
-        const el = document.createElement("div");
-        el.innerText = "failed " + result.reason;
-        document.body.appendChild(el);
-      }
-    }
-  });
+    });
 }
 

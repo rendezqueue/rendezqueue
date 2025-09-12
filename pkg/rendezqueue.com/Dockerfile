@@ -16,6 +16,7 @@ COPY src/webdual/script.js ./
 
 WORKDIR /app/nodejson
 COPY src/nodejson/main.js ./
+COPY src/nodejson/package.json ./
 COPY src/nodejson/rendezqueue_json_impl.js ./
 COPY src/nodejson/swapstore.js ./
 

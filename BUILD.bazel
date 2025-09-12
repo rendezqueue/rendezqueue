@@ -4,11 +4,13 @@ package(
     default_applicable_licenses = [":license"],
     default_visibility = ["//visibility:public"],
 )
+
 license(
     name = "license",
     license_kinds = ["@rules_license//licenses/spdx:0BSD"],
     license_text = "LICENSE",
 )
+
 exports_files([
     "LICENSE",
     "MODULE.bazel",

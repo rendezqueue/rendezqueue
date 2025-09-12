@@ -1,10 +1,23 @@
-load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test")
+load("@aspect_rules_js//js:defs.bzl", "js_test")
+load("@fildesh//tool/bazel:fildesh_run.bzl", "fildesh_run")
+
+fildesh_run(
+    name = "package_json",
+    testonly = True,
+    output_by_xof = {"o": "package.json"},
+    src_content = """
+|< splice -- / "(type module)" /
+|- sxpb2json
+|> splice -o $(XOF o)
+""",
+)
 
 js_test(
     name = "bytestring_test",
     size = "small",
     data = [
         "bytestring_test.js",
+        ":package_json",
     ],
     entry_point = "bytestring_test.js",
 )
@@ -14,6 +27,7 @@ js_test(
     size = "small",
     data = [
         "main_test.js",
+        ":package_json",
         "//src/nodejson:main_js",
         "//test/scenario:webchat.json",
     ],
@@ -25,6 +39,7 @@ js_test(
     size = "small",
     data = [
         "swapstore_test.js",
+        ":package_json",
         "//src/nodejson:swapstore_js",
     ],
     entry_point = "swapstore_test.js",
@@ -35,6 +50,7 @@ js_test(
     size = "small",
     data = [
         "tryswap_concat_test.js",
+        ":package_json",
         "//src/nodejson:swapstore_js",
     ],
     entry_point = "tryswap_concat_test.js",

@@ -33,6 +33,7 @@ def rendezqueue_scenario_test(name):
     js_test(
         name = name + "_nodejson_expect_test",
         data = [
+            ":package_json",
             "//src/nodejson:rendezqueue_json_impl_js",
             "//test/scenario:nodejson_expect.js",
             ":" + name + "_message.json",

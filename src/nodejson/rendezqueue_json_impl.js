@@ -1,7 +1,5 @@
-"use strict";
 
-const path = require("path");
-const SwapStore = require(path.join(__dirname, "swapstore")).SwapStore;
+import { SwapStore } from "./swapstore.js";
 
 const MAX_KEY_BYTES = 100;
 const MAX_ID_BYTES = 100;
@@ -16,45 +14,78 @@ function atob(s) {
 }
 
 function inplace_decode_tryswap_message(msg) {
-  if (msg.b64 === undefined) {msg.b64 = 0;}
-  else if (!Number.isInteger(msg.b64) || msg.b64 < 0) {return "b64";}
+  if (msg.b64 === undefined) {
+    msg.b64 = 0;
+  } else if (!Number.isInteger(msg.b64) || msg.b64 < 0) {
+    return "b64";
+  }
 
-  if (msg.ttl === undefined) {msg.ttl = 0;}
-  else if (!Number.isInteger(msg.ttl) || msg.ttl < 0) {return "ttl";}
+  if (msg.ttl === undefined) {
+    msg.ttl = 0;
+  } else if (!Number.isInteger(msg.ttl) || msg.ttl < 0) {
+    return "ttl";
+  }
 
-  if (msg.key === undefined) {msg.key = "";}
-  else if (typeof(msg.key) != "string") {return "key";}
+  if (msg.key === undefined) {
+    msg.key = "";
+  } else if (typeof(msg.key) != "string") {
+    return "key";
+  }
 
-  if (msg.sid === undefined) {msg.sid = "";}
-  else if (typeof(msg.sid) != "string") {return "sid";}
+  if (msg.sid === undefined) {
+    msg.sid = "";
+  } else if (typeof(msg.sid) != "string") {
+    return "sid";
+  }
 
-  if (msg.offset === undefined) {msg.offset = 0;}
-  else if (!Number.isInteger(msg.offset) || msg.offset < 0) {return "offset";}
+  if (msg.offset === undefined) {
+    msg.offset = 0;
+  } else if (!Number.isInteger(msg.offset) || msg.offset < 0) {
+    return "offset";
+  }
 
-  if (msg.values === undefined) {msg.values = [];}
-  else if (!Array.isArray(msg.values)) {return "values";}
+  if (msg.values === undefined) {
+    msg.values = [];
+  } else if (!Array.isArray(msg.values)) {
+    return "values";
+  }
 
-  if (msg.b64 & 4) {msg.key = atob(msg.key);}
-  if (msg.b64 & 2) {msg.sid = atob(msg.sid);}
-  if (msg.b64 & 1) {msg.values = msg.values.map(atob);}
+  if (msg.b64 & 4) {
+    msg.key = atob(msg.key);
+  }
+  if (msg.b64 & 2) {
+    msg.sid = atob(msg.sid);
+  }
+  if (msg.b64 & 1) {
+    msg.values = msg.values.map(atob);
+  }
   return "";
 }
 
 function inplace_encode_tryswap_message(msg) {
-  if (msg.b64 & 4) {msg.key = btoa(msg.key);}
-  if (msg.b64 & 2) {msg.sid = btoa(msg.sid);}
+  if (msg.b64 & 4) {
+    msg.key = btoa(msg.key);
+  }
+  if (msg.b64 & 2) {
+    msg.sid = btoa(msg.sid);
+  }
   if (msg.b64 & 1) {
     if (msg.values === undefined) {
       msg.b64 &= ~1;
-    }
-    else {
+    } else {
       msg.values = msg.values.map(btoa);
     }
   }
 
-  if (msg.b64 == 0) {delete msg.b64;}
-  if (msg.ttl == 0) {delete msg.ttl;}
-  if (msg.offset == 0) {delete msg.offset;}
+  if (msg.b64 == 0) {
+    delete msg.b64;
+  }
+  if (msg.ttl == 0) {
+    delete msg.ttl;
+  }
+  if (msg.offset == 0) {
+    delete msg.offset;
+  }
 }
 
 class RendezqueueJsonImpl {
@@ -94,8 +125,8 @@ class RendezqueueJsonImpl {
     }
 
     let result = this.swapstore.tryswap(
-        key, sid, offset, values,
-        now_ms, msg.ttl,
+      key, sid, offset, values,
+      now_ms, msg.ttl,
     );
     if (!Number.isInteger(result)) {
       result.b64 = msg.b64;
@@ -108,9 +139,10 @@ class RendezqueueJsonImpl {
     try {
       msg = JSON.parse(request_text);
       const e = inplace_decode_tryswap_message(msg);
-      if (e) {throw e;}
-    }
-    catch (e) {
+      if (e) {
+        throw e;
+      }
+    } catch (e) {
       console.log(e);
       msg = null;
     }
@@ -124,6 +156,8 @@ class RendezqueueJsonImpl {
   }
 }
 
-exports.RendezqueueJsonImpl = RendezqueueJsonImpl;
-exports.inplace_decode_tryswap_message = inplace_decode_tryswap_message;
-exports.inplace_encode_tryswap_message = inplace_encode_tryswap_message;
+export {
+  RendezqueueJsonImpl,
+  inplace_decode_tryswap_message,
+  inplace_encode_tryswap_message,
+};

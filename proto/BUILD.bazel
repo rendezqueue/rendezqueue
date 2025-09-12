@@ -4,5 +4,6 @@ package(default_visibility = ["//visibility:public"])
 
 proto_library(
     name = "rendezqueue_proto",
+    testonly = True,
     srcs = ["rendezqueue.proto"],
 )
