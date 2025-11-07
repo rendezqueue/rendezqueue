@@ -1,5 +1,6 @@
 import { strict as assert } from "assert";
 import * as fs from "fs";
+import process from "node:process";
 import {
   RendezqueueJsonImpl,
   inplace_decode_tryswap_message,

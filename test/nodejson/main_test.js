@@ -1,9 +1,11 @@
 
 import { strict as assert } from "assert";
+import { Buffer } from "node:buffer";
 import { spawn } from "child_process";
 import * as fs from "fs";
 import * as http from "http";
 import * as path from "path";
+import process from "node:process";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);

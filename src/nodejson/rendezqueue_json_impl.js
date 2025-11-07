@@ -1,4 +1,6 @@
 
+import { Buffer } from "node:buffer";
+import process from "node:process";
 import { SwapStore } from "./swapstore.js";
 
 const MAX_KEY_BYTES = 100;

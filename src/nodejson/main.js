@@ -2,6 +2,7 @@
 import * as http from "http";
 import * as url from "url";
 import * as fs from "fs";
+import process from "node:process";
 import { RendezqueueJsonImpl } from "./rendezqueue_json_impl.js";
 
 

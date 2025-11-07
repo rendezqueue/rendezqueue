@@ -6,16 +6,20 @@ import { defineConfig } from "eslint/config";
 export default defineConfig([
   js.configs.recommended,
   {
-    files: ["**/*.js"],
+    files: ["**/*.js", "test/**/*.js"],
     ignores: ["src/webdual/script.js"],
     languageOptions: {
       ecmaVersion: 2021,
       sourceType: "module",
       globals: {
-        ...globals.node,
+        "console": "readonly",
+        "setTimeout": "readonly",
+        "setInterval": "readonly",
+        "clearInterval": "readonly"
       }
     },
     rules: {
+      "no-undef": "error",
       indent: ["error", 2],
       semi: ["error", "always"],
       quotes: ["error", "double"],
@@ -50,4 +54,13 @@ export default defineConfig([
       "jsonc/indent": ["error", 2],
     }
   },
+  {
+    files: ["src/rendezqueue_client.js"],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      }
+    }
+  }
 ]);
