@@ -7,6 +7,7 @@ import * as http from "http";
 import * as path from "path";
 import process from "node:process";
 import { fileURLToPath } from "url";
+import { test } from "vitest";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,9 +55,14 @@ async function wait_for_file(filePath) {
   }
 }
 
-async function main() {
+test("nodejson main integration", async () => {
   const tmp_dirpath = process.env.TEST_TMPDIR || "/tmp";
   assert.ok(tmp_dirpath);
+  // Ensure the directory exists (it should be created by setup.js)
+  if (!fs.existsSync(tmp_dirpath)) {
+    fs.mkdirSync(tmp_dirpath, { recursive: true });
+  }
+
   const port_filepath = path.join(tmp_dirpath, `portfile.${process.pid}`);
 
   let server;
@@ -99,9 +105,4 @@ async function main() {
       fs.unlinkSync(port_filepath);
     }
   }
-}
-
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
 });

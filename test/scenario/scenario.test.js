@@ -3,6 +3,7 @@ import { strict as assert } from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import { test } from "vitest";
 import {
   RendezqueueJsonImpl,
   inplace_decode_tryswap_message,
@@ -40,25 +41,18 @@ function run_scenario(scenario_file) {
   }
 }
 
-// Map scenarios to their JSON files.
-// Note: In the future we might want to generate these from .sxpb using a tool,
-// but for now we assume the .json files exist or we commit them.
-// The Bazel build was converting sxpb -> json.
-// I will just run the existing webchat.json for now.
+test("scenarios", () => {
+  const scenarios = [
+    "webchat.json",
+  ];
 
-const scenarios = [
-  "webchat.json",
-  // "basic.json" // basic.sxpb exists but basic.json is not currently present, I should generate it or skip it.
-];
-
-scenarios.forEach(scenario => {
-  const scenario_path = path.join(__dirname, scenario);
-  if (fs.existsSync(scenario_path)) {
-     // We can just run the logic directly here as a test.
-     // Node --test will pick up this file if I rename it to scenario.test.js
-     console.log(`Running scenario: ${scenario}`);
-     run_scenario(scenario_path);
-  } else {
-    console.warn(`Skipping scenario ${scenario}: file not found.`);
-  }
+  scenarios.forEach(scenario => {
+    const scenario_path = path.join(__dirname, scenario);
+    if (fs.existsSync(scenario_path)) {
+       console.log(`Running scenario: ${scenario}`);
+       run_scenario(scenario_path);
+    } else {
+      console.warn(`Skipping scenario ${scenario}: file not found.`);
+    }
+  });
 });

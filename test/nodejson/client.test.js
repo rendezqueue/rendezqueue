@@ -1,13 +1,12 @@
 
-
 import { strict as assert } from "assert";
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import process from "node:process";
 import { RendezqueueClient } from "../../src/rendezqueue_client.js";
-
 import { fileURLToPath } from "url";
+import { test } from "vitest";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -33,7 +32,7 @@ async function waitForMessages(received_array, count) {
   }
 }
 
-async function main() {
+test("client integration", async () => {
   const tmpDir = process.env.TEST_TMPDIR || "/tmp";
   const nodejson_port_file = path.join(tmpDir, `nodejson_portfile.${process.pid}`);
 
@@ -147,9 +146,4 @@ async function main() {
       fs.unlinkSync(nodejson_port_file);
     }
   }
-}
-
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
 });

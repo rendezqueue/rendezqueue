@@ -1,5 +1,4 @@
 
-
 import { strict as assert } from "assert";
 import { spawn } from "child_process";
 import fs from "fs";
@@ -8,6 +7,7 @@ import http from "http";
 import url from "url";
 import playwright from "playwright";
 import { fileURLToPath } from "url";
+import { test } from "vitest";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -58,7 +58,7 @@ async function get_text(page, selector) {
   return await page.$eval(selector, (el) => el.innerText);
 }
 
-async function main() {
+test("webchat integration", async () => {
   const tmpDir = process.env.TEST_TMPDIR || "/tmp";
   const nodejson_port_file = path.join(tmpDir, `nodejson_portfile.${process.pid}`);
 
@@ -227,9 +227,4 @@ async function main() {
       fs.unlinkSync(nodejson_port_file);
     }
   }
-}
-
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
 });
