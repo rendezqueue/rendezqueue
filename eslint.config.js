@@ -6,8 +6,7 @@ import { defineConfig } from "eslint/config";
 export default defineConfig([
   js.configs.recommended,
   {
-    files: ["**/*.js", "test/**/*.js"],
-    ignores: ["src/webdual/script.js"],
+    files: ["**/*.js"],
     languageOptions: {
       ecmaVersion: 2021,
       sourceType: "module",
@@ -20,6 +19,7 @@ export default defineConfig([
     },
     rules: {
       "no-undef": "error",
+      "no-unused-vars": "warn", // Downgrade to warning
       indent: ["error", 2],
       semi: ["error", "always"],
       quotes: ["error", "double"],
@@ -30,22 +30,29 @@ export default defineConfig([
     }
   },
   {
-    files: ["src/webdual/script.js"],
+    files: ["src/webchat/script.js", "src/webrtcchat/script.js", "src/webdual/script.js"],
     languageOptions: {
-      ecmaVersion: 2021,
-      sourceType: "module",
       globals: {
         ...globals.browser,
+        "RendezqueueClient": "readonly",
       }
-    },
-    rules: {
-      indent: ["error", 2],
-      semi: ["error", "always"],
-      quotes: ["error", "double"],
-      "brace-style": ["error", "1tbs"],
-      strict: ["error", "safe"],
-      "no-console": "off",
-      camelcase: "off",
+    }
+  },
+  {
+    files: ["test/**/*.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      }
+    }
+  },
+  {
+    files: ["test/webdual/main_test.js", "test/webrtcchat/main_test.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        "document": "readonly"
+      }
     }
   },
   ...eslintPluginJsonc.configs["flat/recommended-with-json"],

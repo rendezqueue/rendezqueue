@@ -7,7 +7,11 @@ import path from "path";
 import process from "node:process";
 import { RendezqueueClient } from "../../src/rendezqueue_client.js";
 
-const nodejson_server_path = process.argv[2];
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const nodejson_server_path = process.argv[2] || path.join(__dirname, "../../src/nodejson/main.js");
 
 async function waitForFile(filePath) {
   while (true) {
@@ -42,8 +46,8 @@ async function main() {
     const http_host = "127.0.0.1";
     const http_path = "/test-tryswap-path";
     nodejson_server = spawn(
-      nodejson_server_path,
-      ["--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--http_path=${http_path}`],
+      process.execPath,
+      [nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--http_path=${http_path}`],
       { stdio: ["ignore", "inherit", "inherit"] }
     );
 

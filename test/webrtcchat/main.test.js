@@ -1,14 +1,20 @@
 
 
-const assert = require("assert").strict;
-const { spawn } = require("child_process");
-const fs = require("fs");
-const path = require("path");
-const http = require("http");
-const url = require("url");
-const playwright = require("playwright");
+import { strict as assert } from "assert";
+import { spawn } from "child_process";
+import fs from "fs";
+import path from "path";
+import http from "http";
+import url from "url";
+import playwright from "playwright";
+import { fileURLToPath } from "url";
 
-const [nodejson_server_path, index_html_path, script_js_path, rendezqueue_client_js_path] = process.argv.slice(2);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const nodejson_server_path = process.argv[2] || path.join(__dirname, "../../src/nodejson/main.js");
+const index_html_path = process.argv[3] || path.join(__dirname, "../../src/webrtcchat/index.html");
+const script_js_path = process.argv[4] || path.join(__dirname, "../../src/webrtcchat/script.js");
+const rendezqueue_client_js_path = process.argv[5] || path.join(__dirname, "../../src/rendezqueue_client.js");
 
 async function waitForFile(filePath) {
   while (true) {
@@ -39,6 +45,9 @@ function createStaticServer(files) {
         res.end(JSON.stringify(err));
         return;
       }
+      if (lookup_path.endsWith(".js") || lookup_path.endsWith(".mjs")) {
+        res.setHeader("Content-Type", "application/javascript");
+      }
       res.writeHead(200);
       res.end(data);
     });
@@ -63,8 +72,8 @@ async function main() {
     // Start nodejson server
     const http_path = "/tryswap";
     nodejson_server = spawn(
-      nodejson_server_path,
-      ["--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_path=${http_path}`],
+      process.execPath,
+      [nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_path=${http_path}`],
       { stdio: ["ignore", "inherit", "inherit"] }
     );
 

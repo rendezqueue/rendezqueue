@@ -55,7 +55,7 @@ async function wait_for_file(filePath) {
 }
 
 async function main() {
-  const tmp_dirpath = process.env.TEST_TMPDIR;
+  const tmp_dirpath = process.env.TEST_TMPDIR || "/tmp";
   assert.ok(tmp_dirpath);
   const port_filepath = path.join(tmp_dirpath, `portfile.${process.pid}`);
 

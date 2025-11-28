@@ -1,0 +1,212 @@
+[
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Alice-1",
+      "ttl": 5,
+      "values": ["QTE"]
+    },
+    "res": {
+      "key": "test-room",
+      "sid": "Alice-1",
+      "ttl": 5,
+      "offset": 1
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Alice-1",
+      "ttl": 5,
+      "offset": 1,
+      "values": ["QTI"]
+    },
+    "res": {
+      "key": "test-room",
+      "sid": "Alice-1",
+      "ttl": 5,
+      "offset": 2
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Bob-1",
+      "ttl": 5,
+      "values": ["QjE"]
+    },
+    "res": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Bob-1",
+      "offset": 1,
+      "values": ["QTE", "QTI"]
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Bob-2",
+      "ttl": 5
+    },
+    "res": {
+      "key": "test-room",
+      "sid": "Bob-2",
+      "ttl": 5
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Bob-2",
+      "ttl": 5,
+      "values": ["QjI"]
+    },
+    "res": {
+      "key": "test-room",
+      "sid": "Bob-2",
+      "ttl": 5,
+      "offset": 1
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Bob-2",
+      "ttl": 5,
+      "offset": 1,
+      "values": ["QjM"]
+    },
+    "res": {
+      "key": "test-room",
+      "sid": "Bob-2",
+      "ttl": 5,
+      "offset": 2
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Alice-1",
+      "ttl": 5,
+      "offset": 2,
+      "values": ["QTM"]
+    },
+    "res": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Alice-1",
+      "offset": 2,
+      "values": ["QjE"]
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Alice-2",
+      "ttl": 5,
+      "values": ["QTM"]
+    },
+    "res": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Alice-2",
+      "offset": 1,
+      "values": ["QjI", "QjM"]
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Alice-3",
+      "ttl": 5,
+      "values": ["QTQ"]
+    },
+    "res": {
+      "key": "test-room",
+      "sid": "Alice-3",
+      "ttl": 5,
+      "offset": 1
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Alice-3",
+      "ttl": 5,
+      "offset": 1,
+      "values": ["QTU"]
+    },
+    "res": {
+      "key": "test-room",
+      "sid": "Alice-3",
+      "ttl": 5,
+      "offset": 2
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Bob-2",
+      "offset": 2
+    },
+    "res": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Bob-2",
+      "offset": 2,
+      "values": ["QTM"]
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Bob-3",
+      "ttl": 5
+    },
+    "res": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Bob-3",
+      "values": ["QTQ", "QTU"]
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Alice-3",
+      "offset": 2
+    },
+    "res": {
+      "key": "test-room",
+      "sid": "Alice-3",
+      "offset": 2
+    }
+  },
+  {
+    "req": {
+      "b64": 1,
+      "key": "test-room",
+      "sid": "Alice-4",
+      "ttl": 5
+    },
+    "res": {
+      "key": "test-room",
+      "sid": "Alice-4",
+      "ttl": 5
+    }
+  }
+]

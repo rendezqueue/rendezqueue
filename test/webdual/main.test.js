@@ -1,14 +1,19 @@
 
 
-const assert = require("assert").strict;
-const { spawn } = require("child_process");
-const fs = require("fs");
-const path = require("path");
-const http = require("http");
-const url = require("url");
-const playwright = require("playwright");
+import { strict as assert } from "assert";
+import { spawn } from "child_process";
+import fs from "fs";
+import path from "path";
+import http from "http";
+import url from "url";
+import playwright from "playwright";
+import { fileURLToPath } from "url";
 
-const [nodejson_server_path, index_html_path, script_js_path] = process.argv.slice(2);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const nodejson_server_path = process.argv[2] || path.join(__dirname, "../../src/nodejson/main.js");
+const index_html_path = process.argv[3] || path.join(__dirname, "../../src/webdual/index.html");
+const script_js_path = process.argv[4] || path.join(__dirname, "../../src/webdual/script.js");
 
 async function waitForFile(filePath) {
   while (true) {
@@ -57,8 +62,8 @@ async function main() {
   try {
     // Start nodejson server
     nodejson_server = spawn(
-      nodejson_server_path,
-      ["--http_port=0", `--o-http-port=${nodejson_port_file}`],
+      process.execPath,
+      [nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`],
       { stdio: ["ignore", "inherit", "inherit"] }
     );
 

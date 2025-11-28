@@ -134,6 +134,7 @@ class RendezqueueClient {
   }
 }
 
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { RendezqueueClient };
+if (typeof window !== "undefined") {
+  window.RendezqueueClient = RendezqueueClient;
 }
+export { RendezqueueClient };
