@@ -1,6 +1,4 @@
 *.swp
 /.vs*
-/MODULE.bazel.lock
-/bazel-*
 /node_modules/
 /package-lock.json
