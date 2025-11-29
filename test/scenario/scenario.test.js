@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { test } from "vitest";
+import SxPB from "@sxproto/sxpb";
 import {
   RendezqueueJsonImpl,
   inplace_decode_tryswap_message,
@@ -19,7 +20,7 @@ function run_scenario(scenario_file) {
 
   try {
     const data = fs.readFileSync(scenario_file, "utf8");
-    expectations = JSON.parse(data);
+    expectations = SxPB.parse(data);
   } catch (err) {
     assert.fail(err);
   }
@@ -43,14 +44,14 @@ function run_scenario(scenario_file) {
 
 test("scenarios", () => {
   const scenarios = [
-    "webchat.json",
+    "webchat.sxpb",
   ];
 
   scenarios.forEach(scenario => {
     const scenario_path = path.join(__dirname, scenario);
     if (fs.existsSync(scenario_path)) {
-       console.log(`Running scenario: ${scenario}`);
-       run_scenario(scenario_path);
+      console.log(`Running scenario: ${scenario}`);
+      run_scenario(scenario_path);
     } else {
       console.warn(`Skipping scenario ${scenario}: file not found.`);
     }

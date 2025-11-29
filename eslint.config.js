@@ -47,7 +47,7 @@ export default defineConfig([
     }
   },
   {
-    files: ["test/webdual/main_test.js", "test/webrtcchat/main_test.js"],
+    files: ["test/webdual/main.test.js", "test/webrtcchat/main.test.js"],
     languageOptions: {
       globals: {
         ...globals.node,

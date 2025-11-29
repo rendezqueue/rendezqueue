@@ -22,7 +22,7 @@ async function waitForFile(filePath) {
       if (fs.readFileSync(filePath, "utf8").trim() !== "") {
         return;
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -97,7 +97,6 @@ test("webrtcchat integration", async () => {
 
     // Run playwright test
     browser = await playwright.chromium.launch();
-    const context = await browser.newContext();
 
     const backend_url = `http://127.0.0.1:${nodejson_port}${http_path}`;
     const room_key = "test-room-" + Math.random();

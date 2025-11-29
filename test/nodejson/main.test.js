@@ -8,12 +8,13 @@ import * as path from "path";
 import process from "node:process";
 import { fileURLToPath } from "url";
 import { test } from "vitest";
+import SxPB from "@sxproto/sxpb";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const main_js_filepath = path.join(__dirname, "../../src/nodejson/main.js");
-const scenario_filepath = path.join(__dirname, "../scenario/webchat.json");
+const scenario_filepath = path.join(__dirname, "../scenario/webchat.sxpb");
 
 function request(options, body) {
   options.hostname = "127.0.0.1";
@@ -80,7 +81,7 @@ test("nodejson main integration", async () => {
     const port = fs.readFileSync(port_filepath, "utf8").trim();
     console.log(`Server started on port ${port}`);
 
-    const expectations = JSON.parse(fs.readFileSync(scenario_filepath, "utf8"));
+    const expectations = SxPB.parse(fs.readFileSync(scenario_filepath, "utf8"));
 
     for (const expectation of expectations) {
       const req_body = expectation.req;

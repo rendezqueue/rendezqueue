@@ -4,8 +4,6 @@
 const chatLog = document.getElementById("chat-log");
 const chatForm = document.getElementById("chat-form");
 const messageInput = document.getElementById("message-input");
-const backendUrlInput = document.getElementById("backend-url-input");
-const roomKeyInput = document.getElementById("room-key-input");
 
 // --- State ---
 let backendUrl;

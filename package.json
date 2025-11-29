@@ -1,6 +1,7 @@
 {
   "type": "module",
   "devDependencies": {
+    "@sxproto/sxpb": "github:sxproto/sxpb-js#deb8840f13a2d192360b7ec2d3429ba05e7ca0b0",
     "eslint": "^9.35.0",
     "eslint-plugin-jsonc": "^2.20.1",
     "npm-run-all": "^4.1.5",
@@ -12,6 +13,7 @@
     "eslint:fix": "eslint . --fix",
     "lint": "npm-run-all --parallel eslint:check",
     "lint:fix": "npm-run-all --parallel eslint:fix",
+    "tidy": "npm run lint:fix",
     "test": "vitest run"
   },
   "pnpm": {

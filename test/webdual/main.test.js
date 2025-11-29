@@ -21,7 +21,7 @@ async function waitForFile(filePath) {
       if (fs.readFileSync(filePath, "utf8").trim() !== "") {
         return;
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
     await new Promise(resolve => setTimeout(resolve, 100));
