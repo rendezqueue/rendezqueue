@@ -1,18 +1,10 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@fildesh//tool/bazel:fildesh_run.bzl", "fildesh_run")
 load("scenario.bzl", "rendezqueue_scenario_test")
 
 bzl_library(
     name = "scenario_bzl",
     srcs = ["scenario.bzl"],
-)
-
-proto_library(
-    name = "scenario_proto",
-    testonly = True,
-    srcs = ["scenario.proto"],
-    deps = ["//proto:rendezqueue_proto"],
 )
 
 fildesh_run(

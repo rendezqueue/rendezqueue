@@ -14,8 +14,7 @@ let expectations = undefined;
 assert.equal(process.argv.length, 3);
 try {
   const data = fs.readFileSync(process.argv[2], "utf8");
-  const obj = JSON.parse(data);
-  expectations = obj.expectations;
+  expectations = JSON.parse(data);
 } catch (err) {
   assert.fail(err);
 }
