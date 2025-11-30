@@ -12,7 +12,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const main_js_filepath = path.join(__dirname, "../../src/nodejson/main.js");
+const main_js_filepath = path.join(__dirname, "../../src/server/main.ts");
 import SxPB from "@sxproto/sxpb";
 
 const scenario_filepath = path.join(__dirname, "../tryswap/scenario/webchat.sxpb");
@@ -64,6 +64,8 @@ async function main() {
   let server;
   try {
     const args = [
+      "--import",
+      "tsx",
       main_js_filepath,
       "--http_port=0",
       `--o-http-port=${port_filepath}`,

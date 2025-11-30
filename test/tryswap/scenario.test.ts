@@ -9,7 +9,7 @@ import {
   RendezqueueJsonImpl,
   inplace_decode_tryswap_message,
   inplace_encode_tryswap_message,
-} from "../../src/nodejson/rendezqueue_json_impl.js";
+} from "../../src/server/rendezqueue_json_impl.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,21 +23,21 @@ describe("scenario tests", () => {
       const sxpb_content = fs.readFileSync(sxpb_path, "utf8");
       const expectations = SxPB.parse(sxpb_content);
 
-      let rendezqueue_json_impl = new RendezqueueJsonImpl();
+      const rendezqueue_json_impl = new RendezqueueJsonImpl();
       let timestamp_ms = 0;
 
-      for (let e of expectations) {
+      for (const e of expectations) {
         if (Object.keys(e).length === 0) continue;
 
         const debug_string = JSON.stringify(e);
-        let sstat = inplace_decode_tryswap_message(e.req);
+        const sstat = inplace_decode_tryswap_message(e.req);
         assert.strictEqual(sstat, "", `Decode failed for ${debug_string}`);
 
         if (Number.isInteger(e.delta_ms)) {
           timestamp_ms += e.delta_ms;
         }
 
-        let result = rendezqueue_json_impl.TrySwap(e.req, timestamp_ms);
+        const result = rendezqueue_json_impl.TrySwap(e.req, timestamp_ms);
         if (Number.isInteger(result)) {
           assert.equal(result, e.http_status_code, debug_string);
         } else {

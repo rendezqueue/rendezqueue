@@ -1,14 +1,14 @@
 
 import { strict as assert } from "assert";
-import { SwapStore } from "../../src/nodejson/swapstore.js";
+import { SwapStore } from "../../src/server/swapstore.js";
 
-var swapstore = new SwapStore();
+const swapstore = new SwapStore();
 
 function tryswap_single(key, sid, value) {
   return swapstore.tryswap(key, sid, 0, [value], 1);
 }
 
-var res;
+let res;
 res = tryswap_single("mykey", "5sid", "my5value");
 assert.equal(res.key, "mykey");
 assert.equal(res.sid, "5sid");

@@ -6,12 +6,12 @@ import path from "path";
 import process from "node:process";
 import os from "node:os";
 import { fileURLToPath } from "url";
-import { RendezqueueClient } from "../../src/rendezqueue_client.js";
+import { RendezqueueClient } from "../../src/client.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const nodejson_server_path = process.argv[2] || path.join(__dirname, "../../src/nodejson/main.js");
+const nodejson_server_path = process.argv[2] || path.join(__dirname, "../../src/server/main.ts");
 
 async function waitForFile(filePath) {
   while (true) {
@@ -47,7 +47,7 @@ async function main() {
     const http_path = "/test-tryswap-path";
     nodejson_server = spawn(
       process.execPath, // node executable
-      [nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--http_path=${http_path}`],
+      ["--import", "tsx", nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--http_path=${http_path}`],
       { stdio: ["ignore", "inherit", "inherit"] }
     );
 

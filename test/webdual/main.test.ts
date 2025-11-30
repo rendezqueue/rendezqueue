@@ -1,18 +1,18 @@
-import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import fs from 'node:fs';
-import path from 'node:path';
-import http from 'node:http';
-import url from 'node:url';
-import os from 'node:os';
-import { test, after } from 'node:test';
-import playwright from 'playwright';
+import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import http from "node:http";
+import url from "node:url";
+import os from "node:os";
+import { test } from "node:test";
+import playwright from "playwright";
 
 // Define paths relative to CWD (repo root)
 // We assume the test is run via `npm test` from the repo root
-const nodejson_server_filepath = path.resolve(process.cwd(), "src/nodejson/main.js");
-const index_html_filepath = path.resolve(process.cwd(), "src/webdual/index.html");
-const script_js_filepath = path.resolve(process.cwd(), "src/webdual/script.js");
+const nodejson_server_filepath = path.resolve(process.cwd(), "src/server/main.ts");
+const index_html_filepath = path.resolve(process.cwd(), "demo/webdual/index.html");
+const app_ts_filepath = path.resolve(process.cwd(), "demo/webdual/app.ts");
 
 async function waitForFile(filepath: string) {
   while (true) {
@@ -20,7 +20,7 @@ async function waitForFile(filepath: string) {
       if (fs.readFileSync(filepath, "utf8").trim() !== "") {
         return;
       }
-    } catch (e) {
+    } catch (_e) {
       // ignore
     }
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -49,14 +49,13 @@ function createStaticServer(files: Record<string, string>) {
   });
 }
 
-test('webdual integration test', async (t) => {
+test("webdual integration test", async (t) => {
   const tmp_dirpath = process.env.TEST_TMPDIR || os.tmpdir();
   const nodejson_port_filepath = path.join(tmp_dirpath, `nodejson_portfile.${process.pid}`);
 
   let nodejson_server: any;
   let http_server: http.Server | undefined;
   let browser: playwright.Browser | undefined;
-  let page: playwright.Page | undefined;
 
   // Teardown
   t.after(async () => {
@@ -72,40 +71,40 @@ test('webdual integration test', async (t) => {
     if (fs.existsSync(nodejson_port_filepath)) {
       try {
         fs.unlinkSync(nodejson_port_filepath);
-      } catch (e) {
-          // ignore
+      } catch (_e) {
+        // ignore
       }
     }
   });
 
   // Check if source files exist
   if (!fs.existsSync(nodejson_server_filepath)) {
-      throw new Error(`nodejson_server_filepath not found: ${nodejson_server_filepath}`);
+    throw new Error(`nodejson_server_filepath not found: ${nodejson_server_filepath}`);
   }
   if (!fs.existsSync(index_html_filepath)) {
-      throw new Error(`index_html_filepath not found: ${index_html_filepath}`);
+    throw new Error(`index_html_filepath not found: ${index_html_filepath}`);
   }
-  if (!fs.existsSync(script_js_filepath)) {
-      throw new Error(`script_js_filepath not found: ${script_js_filepath}`);
+  if (!fs.existsSync(app_ts_filepath)) {
+    throw new Error(`app_ts_filepath not found: ${app_ts_filepath}`);
   }
 
   // Start nodejson server
   // We use process.execPath (node executable) to run the script
   nodejson_server = spawn(
     process.execPath,
-    [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`],
+    ["--import", "tsx", nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`],
     { stdio: ["ignore", "inherit", "inherit"] }
   );
 
   // Start http-server
   const webdual_files: Record<string, string> = {
     "/index.html": index_html_filepath,
-    "/script.js": script_js_filepath,
+    "/app.ts": app_ts_filepath,
   };
   http_server = createStaticServer(webdual_files);
   await new Promise<void>(resolve => http_server!.listen(0, "127.0.0.1", () => resolve()));
   const address = http_server.address();
-  const http_server_port = (typeof address === 'object' && address !== null) ? address.port : 0;
+  const http_server_port = (typeof address === "object" && address !== null) ? address.port : 0;
   console.log(`http-server started on port ${http_server_port}`);
 
 
@@ -118,7 +117,7 @@ test('webdual integration test', async (t) => {
   // Run playwright test
   browser = await playwright.chromium.launch();
   const context = await browser.newContext();
-  page = await context.newPage();
+  const page = await context.newPage();
 
   page.on("console", msg => console.log("PAGE LOG:", msg.text()));
 

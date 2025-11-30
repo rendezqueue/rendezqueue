@@ -1,10 +1,10 @@
 
 import { strict as assert } from "assert";
-import { SwapStore } from "../../src/nodejson/swapstore.js";
+import { SwapStore } from "../../src/server/swapstore.js";
 
-var swapstore = new SwapStore();
+const swapstore = new SwapStore();
 
-var res;
+let res;
 res = swapstore.tryswap("mykey", "9sid", 0, ["a", "b"], 1);
 assert.equal(res.key, "mykey");
 assert.equal(res.offset, 2);

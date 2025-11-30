@@ -29,7 +29,7 @@ jobs:
     - name: Build and Push Image
       uses: docker/build-push-action@v6
       with:
-        context: src/nodejson/
+        context: .
         file: pkg/nodejson_http/Dockerfile
         push: true
         tags: ghcr.io/rendezqueue/rendezqueue_nodejson_http:latest

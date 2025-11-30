@@ -3,8 +3,8 @@ services:
     # Name the image.
     image: rendezqueue_nodejson_http
     build:
-      context: ../../src/nodejson/
+      context: ../../
       # Relative to context.
-      dockerfile: ../../pkg/nodejson_http/Dockerfile
+      dockerfile: ./pkg/nodejson_http/Dockerfile
     ports:
       - "80:80"
