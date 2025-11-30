@@ -5,6 +5,7 @@
     "@sxproto/sxpb": "github:sxproto/sxpb-js#deb8840f13a2d192360b7ec2d3429ba05e7ca0b0",
     "eslint": "^9.35.0",
     "eslint-plugin-jsonc": "^2.20.1",
+    "playwright": "^1.57.0",
     "npm-run-all2": "^8.0.4",
     "tsx": "^4.20.6"
   },
@@ -16,6 +17,6 @@
     "lint": "npm-run-all --parallel eslint:check buildifier:check",
     "lint:fix": "npm-run-all --parallel eslint:fix buildifier:fix",
     "tidy": "npm run lint:fix",
-    "test": "node --import tsx --test test/tryswap/*.test.ts test/nodejson/*_test.js"
+    "test": "node --import tsx --test test/*/*.test.ts"
   }
 }
