@@ -1,13 +1,17 @@
 
-
 import { strict as assert } from "assert";
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import process from "node:process";
+import os from "node:os";
+import { fileURLToPath } from "url";
 import { RendezqueueClient } from "../../src/rendezqueue_client.js";
 
-const nodejson_server_path = process.argv[2];
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const nodejson_server_path = process.argv[2] || path.join(__dirname, "../../src/nodejson/main.js");
 
 async function waitForFile(filePath) {
   while (true) {
@@ -30,7 +34,7 @@ async function waitForMessages(received_array, count) {
 }
 
 async function main() {
-  const tmpDir = process.env.TEST_TMPDIR || "/tmp";
+  const tmpDir = process.env.TEST_TMPDIR || os.tmpdir();
   const nodejson_port_file = path.join(tmpDir, `nodejson_portfile.${process.pid}`);
 
   let nodejson_server;
@@ -42,8 +46,8 @@ async function main() {
     const http_host = "127.0.0.1";
     const http_path = "/test-tryswap-path";
     nodejson_server = spawn(
-      nodejson_server_path,
-      ["--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--http_path=${http_path}`],
+      process.execPath, // node executable
+      [nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--http_path=${http_path}`],
       { stdio: ["ignore", "inherit", "inherit"] }
     );
 

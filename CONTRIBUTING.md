@@ -2,13 +2,16 @@
 
 ## Environment Setup
 ### Bazel
-In a temporary environment like a VM, just use `npm` to install `bazel` for your user.
+Bazel is not required to run the most important tests.
+However if you do need it, `npm` provides a quick way to install `bazel` for your user.
 ```shell
 npm install -g @bazel/bazelisk
 ```
 
-Now the following should work:
-```shell
+## Test
+To run the test suite:
+```bash
+npm test
 bazel test //...
 ```
 

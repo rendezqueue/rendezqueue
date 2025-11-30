@@ -6,13 +6,16 @@ import * as fs from "fs";
 import * as http from "http";
 import * as path from "path";
 import process from "node:process";
+import os from "node:os";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const main_js_filepath = path.join(__dirname, "../../src/nodejson/main.js");
-const scenario_filepath = path.join(__dirname, "../scenario/webchat.json");
+import SxPB from "@sxproto/sxpb";
+
+const scenario_filepath = path.join(__dirname, "../tryswap/scenario/webchat.sxpb");
 
 function request(options, body) {
   options.hostname = "127.0.0.1";
@@ -55,8 +58,7 @@ async function wait_for_file(filePath) {
 }
 
 async function main() {
-  const tmp_dirpath = process.env.TEST_TMPDIR;
-  assert.ok(tmp_dirpath);
+  const tmp_dirpath = process.env.TEST_TMPDIR || os.tmpdir();
   const port_filepath = path.join(tmp_dirpath, `portfile.${process.pid}`);
 
   let server;
@@ -74,9 +76,13 @@ async function main() {
     const port = fs.readFileSync(port_filepath, "utf8").trim();
     console.log(`Server started on port ${port}`);
 
-    const expectations = JSON.parse(fs.readFileSync(scenario_filepath, "utf8"));
+    const sxpb_content = fs.readFileSync(scenario_filepath, "utf8");
+    const expectations = SxPB.parse(sxpb_content);
 
     for (const expectation of expectations) {
+      if (Object.keys(expectation).length === 0) {
+        continue;
+      }
       const req_body = expectation.req;
       const res = await request({ port }, JSON.stringify(req_body));
 
@@ -84,7 +90,7 @@ async function main() {
         assert.strictEqual(res.http_status_code, expectation.http_status_code);
       } else {
         assert.strictEqual(res.http_status_code, 200);
-        const res_body = JSON.parse(res.body);
+        const res_body = res.body ? JSON.parse(res.body) : {};
         assert.deepStrictEqual(res_body, expectation.res);
       }
     }
