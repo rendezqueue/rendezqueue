@@ -3,7 +3,7 @@ import { strict as assert } from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import SxPB from "@sxproto/sxpb";
 import {
   RendezqueueJsonImpl,
@@ -26,7 +26,7 @@ describe("scenario tests", () => {
       const rendezqueue_json_impl = new RendezqueueJsonImpl();
       let timestamp_ms = 0;
 
-      for (const e of expectations) {
+      for (const e of (expectations as any)) {
         if (Object.keys(e).length === 0) continue;
 
         const debug_string = JSON.stringify(e);

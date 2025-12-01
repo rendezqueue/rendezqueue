@@ -44,6 +44,7 @@ const strictTsConfig = {
       }
     ],
     "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-non-null-assertion": "error",
   }
 };
 
@@ -79,11 +80,15 @@ const looseJsConfig = {
     strict: ["error", "safe"],
     "no-console": "off",
     camelcase: "off",
+    "@typescript-eslint/no-non-null-assertion": "error",
   }
 };
 
 export default defineConfig([
   // Global ignore
+  {
+    ignores: ["dist/"]
+  },
   // Specific configs
   looseJsConfig,
   strictTsConfig,

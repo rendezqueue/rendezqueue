@@ -4,7 +4,33 @@
  * This library encapsulates polling, base64 encoding/decoding, and exchange
  * detection. It calls back to application code when new data has arrived.
  */
+
+interface RendezqueueClientInit {
+  url: string;
+  key: string;
+  hue: string;
+  on_data: (data: string[]) => void;
+  on_error?: (error: any) => void;
+  poll_interval_ms?: number;
+}
+
 class RendezqueueClient {
+  url: string;
+  key: string;
+  hue: string;
+  on_data: (data: string[]) => void;
+  on_error: (error: any) => void;
+  poll_interval_ms: number;
+
+  sid_counter: number;
+  sid: string;
+  offset: number;
+  outgoing_queue: string[];
+
+  is_polling: boolean;
+  is_stopped: boolean;
+  poll_interval_id: ReturnType<typeof setInterval> | null;
+
   constructor({
     url,
     key,
@@ -12,7 +38,7 @@ class RendezqueueClient {
     on_data,
     on_error = console.error,
     poll_interval_ms = 2000
-  }) {
+  }: RendezqueueClientInit) {
     this.url = url;
     this.key = key;
     this.hue = hue;
@@ -30,7 +56,7 @@ class RendezqueueClient {
     this.poll_interval_id = null;
   }
 
-  start() {
+  start(): void {
     if (!this.is_stopped) {
       return;
     }
@@ -39,26 +65,28 @@ class RendezqueueClient {
     this._poll(); // Initial poll
   }
 
-  stop() {
+  stop(): void {
     if (this.is_stopped) {
       return;
     }
     this.is_stopped = true;
-    clearInterval(this.poll_interval_id);
+    if (this.poll_interval_id) {
+      clearInterval(this.poll_interval_id);
+    }
     this.poll_interval_id = null;
   }
 
-  send(value) {
+  send(value: string): void {
     this.outgoing_queue.push(value);
   }
 
-  _start_new_session() {
+  _start_new_session(): void {
     this.sid_counter++;
     this.sid = `${this.hue}-${this.sid_counter}-${Math.random().toString(36).substring(2, 9)}`;
     this.offset = 0;
   }
 
-  async _poll() {
+  async _poll(): Promise<void> {
     if (this.is_polling) {
       return;
     }
@@ -119,7 +147,7 @@ class RendezqueueClient {
     }
   }
 
-  async _decode_response(res) {
+  async _decode_response(res: Response): Promise<any> {
     const msg = await res.json();
     if (msg.b64 & 4) {
       msg.key = atob(msg.key);
@@ -128,7 +156,7 @@ class RendezqueueClient {
       msg.sid = atob(msg.sid);
     }
     if (msg.values && (msg.b64 & 1)) {
-      msg.values = msg.values.map(v => atob(v));
+      msg.values = msg.values.map((v: string) => atob(v));
     }
     return msg;
   }

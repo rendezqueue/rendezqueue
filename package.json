@@ -3,12 +3,16 @@
   "devDependencies": {
     "@bazel/buildifier": "^6.4.0",
     "@sxproto/sxpb": "github:sxproto/sxpb-js#deb8840f13a2d192360b7ec2d3429ba05e7ca0b0",
+    "@types/node": "^22.10.6",
     "eslint": "^9.35.0",
     "eslint-plugin-jsonc": "^2.20.1",
     "npm-run-all2": "^8.0.4",
     "playwright": "^1.57.0",
     "tsx": "^4.21.0",
-    "typescript-eslint": "^8.48.0"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.48.0",
+    "vite": "^6.2.0",
+    "vitest": "^3.0.0"
   },
   "scripts": {
     "eslint:check": "eslint .",
@@ -18,6 +22,7 @@
     "lint": "npm-run-all --parallel eslint:check buildifier:check",
     "lint:fix": "npm-run-all --parallel eslint:fix buildifier:fix",
     "tidy": "npm run lint:fix",
-    "test": "node --import tsx --test test/*/*.test.ts"
+    "build": "tsc",
+    "test": "npm run build && vitest run"
   }
 }

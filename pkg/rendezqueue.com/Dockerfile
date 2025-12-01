@@ -12,14 +12,12 @@ COPY pkg/rendezqueue.com/index.html ./
 
 WORKDIR /app/html/demo/webdual
 COPY demo/webdual/index.html ./
-COPY demo/webdual/app.ts ./app.js
-
-RUN sed -i 's/app.ts/app.js/g' index.html
+COPY dist/demo/webdual/app.js ./app.js
 
 WORKDIR /app/nodejson
-COPY src/server/main.ts ./main.js
-COPY src/server/rendezqueue_json_impl.ts ./rendezqueue_json_impl.js
-COPY src/server/swapstore.ts ./swapstore.js
+COPY dist/src/server/main.js ./main.js
+COPY dist/src/server/rendezqueue_json_impl.js ./rendezqueue_json_impl.js
+COPY dist/src/server/swapstore.js ./swapstore.js
 COPY src/server/package.json ./package.json
 
 WORKDIR /app

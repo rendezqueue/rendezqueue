@@ -1,19 +1,20 @@
 
 import { strict as assert } from "assert";
-import { spawn } from "child_process";
+import { spawn, ChildProcess } from "child_process";
 import fs from "fs";
 import path from "path";
 import process from "node:process";
 import os from "node:os";
 import { fileURLToPath } from "url";
 import { RendezqueueClient } from "../../src/client.js";
+import { test } from "vitest";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const nodejson_server_path = process.argv[2] || path.join(__dirname, "../../src/server/main.ts");
+const nodejson_server_path = process.argv[2] || path.join(__dirname, "../../dist/src/server/main.js");
 
-async function waitForFile(filePath) {
+async function waitForFile(filePath: string) {
   while (true) {
     try {
       if (fs.readFileSync(filePath, "utf8").trim() !== "") {
@@ -27,7 +28,7 @@ async function waitForFile(filePath) {
 }
 
 // Helper to wait for a specific number of messages to be received.
-async function waitForMessages(received_array, count) {
+async function waitForMessages(received_array: string[], count: number) {
   while (received_array.length < count) {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
@@ -37,9 +38,9 @@ async function main() {
   const tmpDir = process.env.TEST_TMPDIR || os.tmpdir();
   const nodejson_port_file = path.join(tmpDir, `nodejson_portfile.${process.pid}`);
 
-  let nodejson_server;
-  let alice_client;
-  let bob_client;
+  let nodejson_server: ChildProcess | undefined;
+  let alice_client: RendezqueueClient | undefined;
+  let bob_client: RendezqueueClient | undefined;
 
   try {
     // Start nodejson server
@@ -47,7 +48,7 @@ async function main() {
     const http_path = "/test-tryswap-path";
     nodejson_server = spawn(
       process.execPath, // node executable
-      ["--import", "tsx", nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--http_path=${http_path}`],
+      [nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--http_path=${http_path}`],
       { stdio: ["ignore", "inherit", "inherit"] }
     );
 
@@ -59,14 +60,14 @@ async function main() {
     const backend_url = `http://${http_host}:${nodejson_port}${http_path}`;
     const room_key = "test-room-" + Math.random();
 
-    const alice_received = [];
-    const bob_received = [];
+    const alice_received: string[] = [];
+    const bob_received: string[] = [];
 
     alice_client = new RendezqueueClient({
       url: backend_url,
       key: room_key,
       hue: "Alice",
-      on_data: (data) => {
+      on_data: (data: string[]) => {
         console.log("Alice received:", data);
         alice_received.push(...data);
       },
@@ -77,7 +78,7 @@ async function main() {
       url: backend_url,
       key: room_key,
       hue: "Bob",
-      on_data: (data) => {
+      on_data: (data: string[]) => {
         console.log("Bob received:", data);
         bob_received.push(...data);
       },
@@ -149,7 +150,4 @@ async function main() {
   }
 }
 
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+test("client integration tests", main);

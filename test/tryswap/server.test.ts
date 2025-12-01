@@ -1,23 +1,25 @@
 
 import { strict as assert } from "assert";
 import { Buffer } from "node:buffer";
-import { spawn } from "child_process";
+import { spawn, ChildProcess } from "child_process";
 import * as fs from "fs";
 import * as http from "http";
 import * as path from "path";
 import process from "node:process";
 import os from "node:os";
 import { fileURLToPath } from "url";
+import { test } from "vitest";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const main_js_filepath = path.join(__dirname, "../../src/server/main.ts");
+// Use the built JS file instead of TS
+const main_js_filepath = path.join(__dirname, "../../dist/src/server/main.js");
 import SxPB from "@sxproto/sxpb";
 
 const scenario_filepath = path.join(__dirname, "../tryswap/scenario/webchat.sxpb");
 
-function request(options, body) {
+function request(options: any, body: any): Promise<any> {
   options.hostname = "127.0.0.1";
   options.method = "POST";
   options.headers = {
@@ -44,7 +46,7 @@ function request(options, body) {
   });
 }
 
-async function wait_for_file(filePath) {
+async function wait_for_file(filePath: string) {
   while (true) {
     try {
       if (fs.readFileSync(filePath, "utf8").trim() !== "") {
@@ -61,12 +63,10 @@ async function main() {
   const tmp_dirpath = process.env.TEST_TMPDIR || os.tmpdir();
   const port_filepath = path.join(tmp_dirpath, `portfile.${process.pid}`);
 
-  let server;
+  let server: ChildProcess | undefined;
   try {
     const args = [
-      "--import",
-      "tsx",
-      main_js_filepath,
+      main_js_filepath, // Run the JS file directly with node
       "--http_port=0",
       `--o-http-port=${port_filepath}`,
     ];
@@ -81,7 +81,7 @@ async function main() {
     const sxpb_content = fs.readFileSync(scenario_filepath, "utf8");
     const expectations = SxPB.parse(sxpb_content);
 
-    for (const expectation of expectations) {
+    for (const expectation of (expectations as any)) {
       if (Object.keys(expectation).length === 0) {
         continue;
       }
@@ -96,9 +96,6 @@ async function main() {
         assert.deepStrictEqual(res_body, expectation.res);
       }
     }
-
-    console.log("--- All tests passed ---");
-
   } finally {
     if (server) {
       server.kill();
@@ -109,7 +106,4 @@ async function main() {
   }
 }
 
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+test("server integration tests", main);

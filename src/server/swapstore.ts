@@ -1,7 +1,30 @@
 
 const MAX_TTL_SECONDS = 20;
 
+interface UnmatchedOffer {
+  sid?: string;
+  values?: string[];
+  expiry_ms: number;
+}
+
+interface SwappedAnswer {
+  original_values: string[];
+  values: string[];
+  expiry_ms: number;
+}
+
+export interface TrySwapResponse {
+  key: string;
+  sid: string;
+  offset: number;
+  values?: string[];
+  ttl?: number;
+}
+
 class SwapStore {
+  unmatched_offer_map: Map<string, UnmatchedOffer>;
+  swapped_answer_multimap: Map<string, Map<string, SwappedAnswer>>;
+  ttl: number;
 
   constructor() {
     // key -> {sid, values, expiry}
@@ -13,17 +36,17 @@ class SwapStore {
     this.ttl = MAX_TTL_SECONDS;
   }
 
-  print_unmatched() {
+  print_unmatched(): void {
     console.log(this.unmatched_offer_map);
   }
 
-  print_swapped() {
+  print_swapped(): void {
     console.log(this.swapped_answer_multimap);
   }
 
   /** Presumably, data was exchanged.**/
-  expire_swapped_answers(key, now_ms) {
-    let expiring_answers = [];
+  expire_swapped_answers(key: string, now_ms: number): boolean {
+    let expiring_answers: string[] = [];
     let answer_map = this.swapped_answer_multimap.get(key);
     if (!answer_map) {
       return true;
@@ -46,8 +69,8 @@ class SwapStore {
   }
 
   /** No takers.**/
-  expire_unmatched_offers(now_ms) {
-    let expiring_offers = [];
+  expire_unmatched_offers(now_ms: number): void {
+    let expiring_offers: string[] = [];
     for (const [key, v] of this.unmatched_offer_map) {
       if (v.expiry_ms > now_ms) {
         break;
@@ -62,7 +85,7 @@ class SwapStore {
     }
   }
 
-  static matches_original(original_values, offset, values) {
+  static matches_original(original_values: string[], offset: number, values: string[]): boolean {
     if (original_values.length < offset) {
       return false;  // Too far ahead. Out of place.
     }
@@ -73,7 +96,7 @@ class SwapStore {
     return original_slice.every((v, i) => values[i] == v);
   }
 
-  tryswap(key, sid, offset, values, now_ms, ttl = 0) {
+  tryswap(key: string, sid: string, offset: number, values: string[], now_ms: number, ttl: number = 0): number | TrySwapResponse {
     if (!Number.isInteger(now_ms)) {
       return 500;
     }
@@ -87,7 +110,7 @@ class SwapStore {
       let answer = answer_map.get(sid);
       if (answer) {
         if (SwapStore.matches_original(answer.original_values, offset, values)) {
-          let result = {
+          let result: TrySwapResponse = {
             key: key,
             sid: sid,
             offset: answer.original_values.length,
@@ -100,12 +123,10 @@ class SwapStore {
         return 404;
       }
     }
-    // Reached this line? No answer.
-
     let offer = this.unmatched_offer_map.get(key);
     if (offer && offer.expiry_ms == 0) {
       this.unmatched_offer_map.delete(key);
-      offer = null;  // Fall through to next case.
+      offer = undefined;  // Fall through to next case.
       this.expire_swapped_answers(key, now_ms);  // Ensure stuff would expire.
     }
 
@@ -131,7 +152,7 @@ class SwapStore {
 
     // Still no match? Might as well reset expiry.
     if (offer.sid == sid) {
-      let original_values = offer.values;
+      let original_values = offer.values || [];
       if (SwapStore.matches_original(original_values, offset, values)) {
         this.unmatched_offer_map.delete(key);
         this.unmatched_offer_map.set(key, {
@@ -148,7 +169,6 @@ class SwapStore {
       }
       return 404;
     }
-    // Reached this line? Got a match!
 
     if (offset != 0) {
       // Invalid offset. We had no existing data!
@@ -161,14 +181,18 @@ class SwapStore {
     }
     answer_map.set(sid, {
       original_values: values,
-      values: offer.values,
+      values: offer.values || [],
       expiry_ms: now_ms + ttl * 1000,
     });
-    answer_map.set(offer.sid, {
-      original_values: offer.values,
-      values: values,
-      expiry_ms: now_ms + ttl * 1000,
-    });
+    // @ts-ignore: offer is guaranteed to exist and offer.sid != sid here.
+    if (offer.sid) {
+      answer_map.set(offer.sid, {
+        original_values: offer.values || [],
+        values: values,
+        expiry_ms: now_ms + ttl * 1000,
+      });
+    }
+
     this.unmatched_offer_map.delete(key);
     this.unmatched_offer_map.set(key, {
       expiry_ms: 0,
@@ -183,4 +207,3 @@ class SwapStore {
 }
 
 export { SwapStore };
-

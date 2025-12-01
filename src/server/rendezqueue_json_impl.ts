@@ -1,21 +1,21 @@
 
 import { Buffer } from "node:buffer";
 import process from "node:process";
-import { SwapStore } from "./swapstore.js";
+import { SwapStore, TrySwapResponse } from "./swapstore.js";
 
 const MAX_KEY_BYTES = 100;
 const MAX_ID_BYTES = 100;
 const MAX_VALUE_BYTES = 1000;
 
 
-function btoa(s) {
+function btoa(s: string): string {
   return Buffer.from(s, "latin1").toString("base64url");
 }
-function atob(s) {
+function atob(s: string): string {
   return Buffer.from(s, "base64url").toString("latin1");
 }
 
-function inplace_decode_tryswap_message(msg) {
+function inplace_decode_tryswap_message(msg: any): string {
   if (msg.b64 === undefined) {
     msg.b64 = 0;
   } else if (!Number.isInteger(msg.b64) || msg.b64 < 0) {
@@ -64,7 +64,7 @@ function inplace_decode_tryswap_message(msg) {
   return "";
 }
 
-function inplace_encode_tryswap_message(msg) {
+function inplace_encode_tryswap_message(msg: any): void {
   if (msg.b64 & 4) {
     msg.key = btoa(msg.key);
   }
@@ -91,11 +91,12 @@ function inplace_encode_tryswap_message(msg) {
 }
 
 class RendezqueueJsonImpl {
+  swapstore: SwapStore;
   constructor() {
     this.swapstore = new SwapStore();
   }
 
-  TrySwap(msg, now_ms = null) {
+  TrySwap(msg: any, now_ms: number | null = null): number | TrySwapResponse {
     if (!msg) {
       return 400;
     }
@@ -112,7 +113,7 @@ class RendezqueueJsonImpl {
       return 413;
     }
 
-    if (values.reduce(((p, v) => p + v.length), 0) > MAX_VALUE_BYTES) {
+    if (values.reduce(((p: number, v: string) => p + v.length), 0) > MAX_VALUE_BYTES) {
       return 413;
     }
 
@@ -120,13 +121,12 @@ class RendezqueueJsonImpl {
       let hrtime_now = process.hrtime();
       now_ms = hrtime_now[0] * 1e3 + hrtime_now[1] / 1.0e6;
       if (now_ms == 0) {
-        // When would this actually return 0?
         return 500;
       }
       now_ms = Math.floor(now_ms);
     }
 
-    let result = this.swapstore.tryswap(
+    let result: any = this.swapstore.tryswap(
       key, sid, offset, values,
       now_ms, msg.ttl,
     );
@@ -136,7 +136,7 @@ class RendezqueueJsonImpl {
     return result;
   }
 
-  TrySwap_string(request_text) {
+  TrySwap_string(request_text: string): number | string {
     let msg = undefined;
     try {
       msg = JSON.parse(request_text);
@@ -150,7 +150,7 @@ class RendezqueueJsonImpl {
     }
 
     let result = this.TrySwap(msg);
-    if (Number.isInteger(result)) {
+    if (typeof result === "number") {
       return result;
     }
     inplace_encode_tryswap_message(result);

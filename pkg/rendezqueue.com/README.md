@@ -5,6 +5,8 @@ This shows exactly how the https://rendezqueue.com/tryswap JSON endpoint is set 
 ## Build
 
 ```shell
+# Ensure this project's dist/ is up to date.
+( cd ../.. ; npm run build )
 # Create an image named rendezqueue_dot_com.
 docker compose build
 ```

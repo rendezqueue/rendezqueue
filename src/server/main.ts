@@ -9,7 +9,7 @@ import { RendezqueueJsonImpl } from "./rendezqueue_json_impl.js";
 let rendezqueue_json_impl = new RendezqueueJsonImpl();
 
 // Flags.
-let argmap = new Map();
+let argmap = new Map<string, string>();
 argmap.set("http_host", "127.0.0.1");
 argmap.set("http_path", "/");
 
@@ -29,17 +29,20 @@ for (let i = 2; i < process.argv.length; ++i) {
   argmap.set(argkey.replaceAll("-", "_"), argval);
 }
 
-const http_host = argmap.get("http_host");
+const http_host = argmap.get("http_host") ?? "127.0.0.1";
 const port_filepath = argmap.get("o_http_port");
-let port = parseInt(argmap.get("http_port"), 10);
+let port = parseInt(argmap.get("http_port") ?? "0", 10);
 if (Number.isNaN(port)) {
   port = 0; // Default to 0 if not provided or not a number
 }
 // End flags.
 
-function respond_options_http(req, res) {
+function respond_options_http(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): void {
   const http_status_code = 204;
-  let http_header_map = {
+  let http_header_map: http.OutgoingHttpHeaders = {
     // "Access-Control-Max-Age": 86400,
     // "Cache-Control": "public, max-age=86400",
     // "Vary": "Origin",
@@ -57,7 +60,11 @@ function respond_options_http(req, res) {
   res.end();
 }
 
-function respond_json_string_http(http_code, response_text, res) {
+function respond_json_string_http(
+  http_code: number,
+  response_text: string,
+  res: http.ServerResponse,
+): void {
   const header_map = {
     "Access-Control-Allow-Origin": "*",  // This isn't how it works.
     "Content-Type": "application/json",
@@ -66,9 +73,9 @@ function respond_json_string_http(http_code, response_text, res) {
   res.end(response_text);
 }
 
-function handle_request_cb(req, res) {
+function handle_request_cb(req: http.IncomingMessage, res: http.ServerResponse): void {
   const http_path = argmap.get("http_path");
-  const parsed_url = url.parse(req.url);
+  const parsed_url = url.parse(req.url ?? "");
   if (parsed_url.pathname !== http_path) {
     respond_json_string_http(404, "", res);
     return;
@@ -83,9 +90,9 @@ function handle_request_cb(req, res) {
     req.on("end", () => {
       let result = rendezqueue_json_impl.TrySwap_string(body);
       if (Number.isInteger(result)) {
-        respond_json_string_http(result, "", res);
+        respond_json_string_http(result as number, "", res);
       } else {
-        respond_json_string_http(200, result, res);
+        respond_json_string_http(200, result as string, res);
       }
     });
   } else {
@@ -96,10 +103,9 @@ function handle_request_cb(req, res) {
 
 var server = http.createServer(handle_request_cb);
 server.listen(port, http_host, () => {
-  const chosen_port = server.address().port;
+  const chosen_port = (server.address() as any).port;
   console.log(`Server running at http://${http_host}:${chosen_port}/`);
   if (port_filepath) {
     fs.writeFileSync(port_filepath, chosen_port.toString());
   }
 });
-

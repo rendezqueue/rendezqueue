@@ -18,6 +18,8 @@ docker kill ${container_id}
 I find `docker compose` more convenient, so we'll start with that.
 
 ```shell
+# Ensure this project's dist/ is up to date.
+( cd ../.. ; npm run build )
 # Creates rendezqueue_nodejson_http image. We don't really compose anything.
 docker compose build
 # Run it using the setup in compose.yaml.

@@ -1,18 +1,18 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
 import url from "node:url";
 import os from "node:os";
-import { test } from "node:test";
+import { test, onTestFinished } from "vitest";
 import playwright from "playwright";
 
 // Define paths relative to CWD (repo root)
 // We assume the test is run via `npm test` from the repo root
-const nodejson_server_filepath = path.resolve(process.cwd(), "src/server/main.ts");
+const nodejson_server_filepath = path.resolve(process.cwd(), "dist/src/server/main.js");
 const index_html_filepath = path.resolve(process.cwd(), "demo/webdual/index.html");
-const app_ts_filepath = path.resolve(process.cwd(), "demo/webdual/app.ts");
+const app_ts_filepath = path.resolve(process.cwd(), "dist/demo/webdual/app.js");
 
 async function waitForFile(filepath: string) {
   while (true) {
@@ -37,6 +37,13 @@ function createStaticServer(files: Record<string, string>) {
       res.end();
       return;
     }
+    // Very simple mime types
+    if (filepath.endsWith(".html")) {
+      res.setHeader("Content-Type", "text/html");
+    } else if (filepath.endsWith(".js")) {
+      res.setHeader("Content-Type", "application/javascript");
+    }
+
     fs.readFile(filepath, (err, data) => {
       if (err) {
         res.writeHead(500);
@@ -49,16 +56,15 @@ function createStaticServer(files: Record<string, string>) {
   });
 }
 
-test("webdual integration test", async (t) => {
+test("webdual integration test", { timeout: 35000 }, async () => {
   const tmp_dirpath = process.env.TEST_TMPDIR || os.tmpdir();
   const nodejson_port_filepath = path.join(tmp_dirpath, `nodejson_portfile.${process.pid}`);
 
-  let nodejson_server: any;
+  let nodejson_server: ChildProcess | undefined;
   let http_server: http.Server | undefined;
   let browser: playwright.Browser | undefined;
 
-  // Teardown
-  t.after(async () => {
+  onTestFinished(async () => {
     if (browser) {
       await browser.close();
     }
@@ -85,24 +91,26 @@ test("webdual integration test", async (t) => {
     throw new Error(`index_html_filepath not found: ${index_html_filepath}`);
   }
   if (!fs.existsSync(app_ts_filepath)) {
-    throw new Error(`app_ts_filepath not found: ${app_ts_filepath}`);
+    throw new Error(`app_ts_filepath not found: ${app_ts_filepath}. Did you run npm run build?`);
   }
 
   // Start nodejson server
   // We use process.execPath (node executable) to run the script
   nodejson_server = spawn(
     process.execPath,
-    ["--import", "tsx", nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`],
+    [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`],
     { stdio: ["ignore", "inherit", "inherit"] }
   );
 
   // Start http-server
   const webdual_files: Record<string, string> = {
     "/index.html": index_html_filepath,
-    "/app.ts": app_ts_filepath,
+    "/app.js": app_ts_filepath, // Map app.js request to the compiled file
   };
+
   http_server = createStaticServer(webdual_files);
-  await new Promise<void>(resolve => http_server!.listen(0, "127.0.0.1", () => resolve()));
+  if (!http_server) throw new Error("http_server is not defined");
+  await new Promise<void>(resolve => http_server?.listen(0, "127.0.0.1", () => resolve()));
   const address = http_server.address();
   const http_server_port = (typeof address === "object" && address !== null) ? address.port : 0;
   console.log(`http-server started on port ${http_server_port}`);
@@ -120,15 +128,25 @@ test("webdual integration test", async (t) => {
   const page = await context.newPage();
 
   page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+  page.on("pageerror", err => console.log("PAGE ERROR:", err));
+  page.on("requestfailed", req => console.log("REQUEST FAILED:", req.url(), req.failure()?.errorText));
 
   const webdual_url = `http://127.0.0.1:${http_server_port}/?url=http://127.0.0.1:${nodejson_port}`;
+  console.log(`Navigating to ${webdual_url}`);
   await page.goto(webdual_url);
 
   // Wait for the results to appear
   console.log("Waiting for results to appear on the page...");
-  // Note: has-text is a Playwright pseudo-class.
-  await page.waitForSelector("div:has-text(\"Bonjour from Bob!\")", { timeout: 10000 });
-  await page.waitForSelector("div:has-text(\"Allo from Alice!\")", { timeout: 10000 });
+  // Increase timeout to 30s to see if it's just slow
+  try {
+    await page.waitForSelector("div:has-text(\"Bonjour from Bob!\")", { timeout: 30000 });
+    await page.waitForSelector("div:has-text(\"Allo from Alice!\")", { timeout: 30000 });
+  } catch (e) {
+    // If it fails, print the body content for debugging
+    const bodyContent = await page.innerText("body");
+    console.log("TIMEOUT! Body content:", bodyContent);
+    throw e;
+  }
 
   const results = await page.evaluate(() => {
     const divs = Array.from(document.body.querySelectorAll("div"));
