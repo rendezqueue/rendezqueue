@@ -5,7 +5,7 @@ import { SwapStore, TrySwapResponse } from "./swapstore.js";
 
 const MAX_KEY_BYTES = 100;
 const MAX_ID_BYTES = 100;
-const MAX_VALUE_BYTES = 1000;
+const MAX_VALUE_BYTES = 65536;
 
 
 function btoa(s: string): string {

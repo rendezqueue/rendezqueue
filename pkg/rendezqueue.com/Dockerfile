@@ -13,6 +13,9 @@ COPY pkg/rendezqueue.com/index.html ./
 WORKDIR /app/html/demo/webchat
 COPY demo/webchat/index.html ./
 COPY dist/demo/webchat/app.js ./app.js
+WORKDIR /app/html/demo/webrtcchat
+COPY demo/webrtcchat/index.html ./
+COPY dist/demo/webrtcchat/app.js ./app.js
 WORKDIR /app/html/demo/webdual
 COPY demo/webdual/index.html ./
 COPY dist/demo/webdual/app.js ./app.js
