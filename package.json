@@ -15,14 +15,15 @@
     "vitest": "^3.0.0"
   },
   "scripts": {
-    "eslint:check": "eslint .",
-    "eslint:fix": "eslint . --fix",
     "buildifier:check": "buildifier -r -mode=check .",
     "buildifier:fix": "buildifier -r -mode=fix .",
-    "lint": "npm-run-all --parallel eslint:check buildifier:check",
-    "lint:fix": "npm-run-all --parallel eslint:fix buildifier:fix",
-    "tidy": "npm run lint:fix",
     "build": "tsc",
-    "test": "npm run build && vitest run"
+    "eslint:check": "eslint .",
+    "eslint:fix": "eslint . --fix",
+    "lint:fix": "npm-run-all --parallel eslint:fix buildifier:fix",
+    "lint": "npm-run-all --parallel eslint:check buildifier:check",
+    "serve:demo": "node dist/src/server/main.js --http_path=/tryswap --demo_urlpath=demo",
+    "test": "npm run build && vitest run",
+    "tidy": "npm run lint:fix"
   }
 }

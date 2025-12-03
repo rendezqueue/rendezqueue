@@ -30,3 +30,10 @@ Linting for JavaScript and Bazel files is run through `npm`.
 ```shell
 npm run lint
 ```
+
+### Filepath Variable Name
+
+- Filepath string variables should have names ending with `_filepath`.
+- Directory path string variables should have names ending with `_dirpath`.
+- URL path string variables should have names ending with `_urlpath`.
+- If a pathname is specifically absolute or relative, use a suffix like `_absfilepath` or `_reldirpath`.

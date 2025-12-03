@@ -2,6 +2,7 @@
 import * as http from "http";
 import * as url from "url";
 import * as fs from "fs";
+import * as path from "path";
 import process from "node:process";
 import { RendezqueueJsonImpl } from "./rendezqueue_json_impl.js";
 
@@ -34,6 +35,12 @@ const port_filepath = argmap.get("o_http_port");
 let port = parseInt(argmap.get("http_port") ?? "0", 10);
 if (Number.isNaN(port)) {
   port = 0; // Default to 0 if not provided or not a number
+}
+
+let demo_urlpath = argmap.get("demo_urlpath");
+if (demo_urlpath) {
+  demo_urlpath = demo_urlpath.replace(/^\/+/, "");
+  demo_urlpath = demo_urlpath.replace(/\/+$/, "");
 }
 // End flags.
 
@@ -73,31 +80,94 @@ function respond_json_string_http(
   res.end(response_text);
 }
 
+function serve_static_file(res: http.ServerResponse, filepath: string, contentType: string): void {
+  fs.readFile(filepath, (err, data) => {
+    if (err) {
+      respond_json_string_http(404, "Not Found", res);
+      return;
+    }
+    res.writeHead(200, { "Content-Type": contentType });
+    res.end(data);
+  });
+}
+
 function handle_request_cb(req: http.IncomingMessage, res: http.ServerResponse): void {
   const http_path = argmap.get("http_path");
   const parsed_url = url.parse(req.url ?? "");
-  if (parsed_url.pathname !== http_path) {
-    respond_json_string_http(404, "", res);
+  const req_urlpath = parsed_url.pathname ?? "";
+
+  // 1. RPC
+  if (req_urlpath === http_path) {
+    if (req.method == "OPTIONS" && req.headers["access-control-request-method"] === "POST") {
+      respond_options_http(req, res);
+    } else if (req.method == "POST" && req.headers["content-type"] === "application/json") {
+      let body = "";
+      req.on("data", chunk => {
+        body += chunk.toString();
+      });
+      req.on("end", () => {
+        let result = rendezqueue_json_impl.TrySwap_string(body);
+        if (Number.isInteger(result)) {
+          respond_json_string_http(result as number, "", res);
+        } else {
+          respond_json_string_http(200, result as string, res);
+        }
+      });
+    } else {
+      respond_json_string_http(418, "", res);
+    }
     return;
   }
-  if (req.method == "OPTIONS" && req.headers["access-control-request-method"] === "POST") {
-    respond_options_http(req, res);
-  } else if (req.method == "POST" && req.headers["content-type"] === "application/json") {
-    let body = "";
-    req.on("data", chunk => {
-      body += chunk.toString();
-    });
-    req.on("end", () => {
-      let result = rendezqueue_json_impl.TrySwap_string(body);
-      if (Number.isInteger(result)) {
-        respond_json_string_http(result as number, "", res);
-      } else {
-        respond_json_string_http(200, result as string, res);
+
+  // 2. Static Files (if demo_dirpath is set)
+  if (demo_urlpath) {
+    const demo_dirpath = "demo";
+    // 2a. /src/client.js
+    // Adjust the path based on demo_urlpath depth to match relative imports (../../src/client.js)
+    let client_js_urlpath = "/src/client.js";
+    const lastSlash = demo_urlpath.lastIndexOf("/");
+    if (lastSlash >= 0) {
+      const prefix = demo_urlpath.substring(0, lastSlash);
+      client_js_urlpath = `/${prefix}/src/client.js`;
+    }
+
+    if (req_urlpath === client_js_urlpath) {
+      const client_js_filepath = path.resolve(process.cwd(), "dist/src/client.js");
+      serve_static_file(res, client_js_filepath, "application/javascript");
+      return;
+    }
+
+    // 2b. /demo_urlpath/...
+    if (req_urlpath.startsWith(`/${demo_urlpath}/`)) {
+      const req_relurlpath = req_urlpath.substring(demo_urlpath.length + 2); // remove "/demo_urlpath/"
+      if (req_relurlpath.includes("..")) {
+        respond_json_string_http(403, "Forbidden", res);
+        return;
       }
-    });
-  } else {
-    respond_json_string_http(418, "", res);
+
+      // Try source (for HTML, CSS)
+      const source_filepath = path.resolve(process.cwd(), demo_dirpath, req_relurlpath);
+      if (fs.existsSync(source_filepath) && !source_filepath.endsWith(".js")) {
+        let contentType = "text/plain";
+        if (source_filepath.endsWith(".html")) contentType = "text/html";
+        else if (source_filepath.endsWith(".css")) contentType = "text/css";
+        serve_static_file(res, source_filepath, contentType);
+        return;
+      }
+
+      // Try dist (for JS)
+      const dist_filepath = path.resolve(process.cwd(), "dist", demo_dirpath, req_relurlpath);
+      if (fs.existsSync(dist_filepath)) {
+        let contentType = "text/plain";
+        if (dist_filepath.endsWith(".js")) contentType = "application/javascript";
+        serve_static_file(res, dist_filepath, contentType);
+        return;
+      }
+    }
   }
+
+  // 3. 404
+  respond_json_string_http(404, "", res);
 }
 
 
@@ -107,5 +177,12 @@ server.listen(port, http_host, () => {
   console.log(`Server running at http://${http_host}:${chosen_port}/`);
   if (port_filepath) {
     fs.writeFileSync(port_filepath, chosen_port.toString());
+  }
+  if (demo_urlpath) {
+    const backend_url = encodeURIComponent(`http://${http_host}:${chosen_port}${argmap.get("http_path")}`);
+    console.log("Demo mode enabled. Try:");
+    console.log(`  http://${http_host}:${chosen_port}/${demo_urlpath}/webchat/index.html?url=${backend_url}`);
+    console.log(`  http://${http_host}:${chosen_port}/${demo_urlpath}/webrtcchat/index.html?url=${backend_url}`);
+    console.log(`  http://${http_host}:${chosen_port}/${demo_urlpath}/webdual/index.html?url=${backend_url}`);
   }
 });
