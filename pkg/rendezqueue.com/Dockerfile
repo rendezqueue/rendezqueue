@@ -10,6 +10,9 @@ COPY pkg/rendezqueue.com/nginx_app.conf ./
 WORKDIR /app/html
 COPY pkg/rendezqueue.com/index.html ./
 
+WORKDIR /app/html/src
+COPY dist/src/client.js ./client.js
+
 WORKDIR /app/html/demo/webchat
 COPY demo/webchat/index.html ./
 COPY dist/demo/webchat/app.js ./app.js
