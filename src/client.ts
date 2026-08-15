@@ -92,11 +92,14 @@ class RendezqueueClient {
     }
     this.is_polling = true;
 
+    const request_sid = this.sid;
+    const request_offset = this.offset;
+    const snapshot_queue = this.outgoing_queue.slice();
     const request_body = {
       key: this.key,
-      sid: this.sid,
-      offset: this.offset,
-      values: this.outgoing_queue.map(v => btoa(v)),
+      sid: request_sid,
+      offset: request_offset,
+      values: snapshot_queue.map(v => btoa(v)),
       b64: 1,
     };
 
@@ -116,28 +119,32 @@ class RendezqueueClient {
       }
 
       const data = await this._decode_response(response);
+      if (this.sid !== request_sid) {
+        // A newer session started while this request was in flight.
+        return;
+      }
       const received_values = data.values || [];
       const session_has_ended = received_values.length > 0 || (data.offset > 0 && data.ttl === undefined);
 
-      if (session_has_ended) {
-        // The server acknowledged all messages up to our sent offset.
-        // Any messages in our queue were part of the exchange.
-        this.offset = data.offset;
-        this.outgoing_queue = [];
+      const server_offset = data.offset || 0;
+      // Remove only the part of this request snapshot acknowledged by the
+      // response. Values appended later, or beyond a terminal answer's original
+      // offer length, remain pending for the next session.
+      const accepted_count = Math.max(
+        0,
+        Math.min(snapshot_queue.length, server_offset - request_offset),
+      );
+      if (accepted_count > 0) {
+        this.outgoing_queue.splice(0, accepted_count);
+      }
+      this.offset = server_offset;
 
+      if (session_has_ended) {
         if (this.on_data) {
           this.on_data(received_values);
         }
 
         this._start_new_session();
-
-      } else { // session is still open
-        const server_offset = data.offset || 0;
-        const sent_count = server_offset - this.offset;
-        if(sent_count > 0){
-          this.outgoing_queue.splice(0, sent_count);
-        }
-        this.offset = server_offset;
       }
 
     } catch (error) {

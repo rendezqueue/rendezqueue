@@ -49,13 +49,12 @@ async function main() {
     nodejson_server = spawn(
       process.execPath, // node executable
       [nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--http_path=${http_path}`],
-      { stdio: ["ignore", "inherit", "inherit"] }
+      { stdio: "ignore" }
     );
 
     // Wait for nodejson server to be ready
     await waitForFile(nodejson_port_file);
     const nodejson_port = fs.readFileSync(nodejson_port_file, "utf8").trim();
-    console.log(`nodejson server started on port ${nodejson_port}`);
 
     const backend_url = `http://${http_host}:${nodejson_port}${http_path}`;
     const room_key = "test-room-" + Math.random();
@@ -68,7 +67,6 @@ async function main() {
       key: room_key,
       hue: "Alice",
       on_data: (data: string[]) => {
-        console.log("Alice received:", data);
         alice_received.push(...data);
       },
       poll_interval_ms: 200, // Use a slightly longer poll interval for stability
@@ -79,7 +77,6 @@ async function main() {
       key: room_key,
       hue: "Bob",
       on_data: (data: string[]) => {
-        console.log("Bob received:", data);
         bob_received.push(...data);
       },
       poll_interval_ms: 200,
@@ -89,12 +86,10 @@ async function main() {
     bob_client.start();
 
     // Steps 1 & 2: Alice sends "A1", then "A2".
-    console.log("Alice sends: A1, A2");
     alice_client.send("A1");
     alice_client.send("A2");
 
     // Step 3: Bob sends "B1", swaps with Alice's offer.
-    console.log("Bob sends: B1");
     bob_client.send("B1");
     await waitForMessages(bob_received, 2);
     assert.deepStrictEqual(bob_received, ["A1", "A2"]);
@@ -106,12 +101,10 @@ async function main() {
     // At this point, the first exchange is complete. Both clients have started a new session.
 
     // Step 5 & 6: Bob sends "B2", then "B3".
-    console.log("Bob sends: B2, B3");
     bob_client.send("B2");
     bob_client.send("B3");
 
     // Step 8: Alice sends "A3" and gets Bob's pending messages.
-    console.log("Alice sends: A3");
     alice_client.send("A3");
     await waitForMessages(alice_received, 3); // B1 + B2 + B3
     assert.deepStrictEqual(alice_received.sort(), ["B1", "B2", "B3"].sort());
@@ -123,7 +116,6 @@ async function main() {
     // Second exchange complete.
 
     // Step 9 & 10: Alice sends "A4", then "A5".
-    console.log("Alice sends: A4, A5");
     alice_client.send("A4");
     alice_client.send("A5");
 
@@ -135,8 +127,6 @@ async function main() {
     // Step 13: Alice polls to get the result of her swap. She gets nothing back, but the session is closed.
     // The client should handle this and start a new session. We can't directly test this part without
     // more introspection into the client, but the next step will fail if it's not working.
-
-    console.log("--- Test passed ---");
 
   } finally {
     if (alice_client) alice_client.stop();
@@ -151,3 +141,97 @@ async function main() {
 }
 
 test("client integration tests", main);
+
+test("terminal response preserves an unacknowledged snapshot tail", async () => {
+  const original_fetch = globalThis.fetch;
+  const received: string[][] = [];
+  try {
+    globalThis.fetch = async () => new Response(JSON.stringify({
+      offset: 1,
+      values: [btoa("peer")],
+      b64: 1,
+    }), { status: 200, headers: { "Content-Type": "application/json" } });
+
+    const client = new RendezqueueClient({
+      url: "http://unused",
+      key: "key",
+      hue: "hue",
+      on_data: values => received.push(values),
+    });
+    client.offset = 1;
+    client.send("queued-after-offer");
+    const old_sid = client.sid;
+
+    await client._poll();
+
+    assert.notEqual(client.sid, old_sid);
+    assert.equal(client.offset, 0);
+    assert.deepStrictEqual(client.outgoing_queue, ["queued-after-offer"]);
+    assert.deepStrictEqual(received, [["peer"]]);
+  } finally {
+    globalThis.fetch = original_fetch;
+  }
+});
+
+test("a response from a superseded session is ignored", async () => {
+  const original_fetch = globalThis.fetch;
+  const received: string[][] = [];
+  try {
+    let replacement_sid = "";
+    let client: RendezqueueClient;
+    globalThis.fetch = async () => {
+      client._start_new_session();
+      replacement_sid = client.sid;
+      return new Response(JSON.stringify({
+        offset: 1,
+        values: [btoa("stale-peer")],
+        b64: 1,
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    };
+
+    client = new RendezqueueClient({
+      url: "http://unused",
+      key: "key",
+      hue: "hue",
+      on_data: values => received.push(values),
+    });
+    client.send("pending");
+
+    await client._poll();
+
+    assert.equal(client.sid, replacement_sid);
+    assert.equal(client.offset, 0);
+    assert.deepStrictEqual(client.outgoing_queue, ["pending"]);
+    assert.deepStrictEqual(received, []);
+  } finally {
+    globalThis.fetch = original_fetch;
+  }
+});
+
+test("404 reports an error without changing session state", async () => {
+  const original_fetch = globalThis.fetch;
+  const errors: any[] = [];
+  try {
+    globalThis.fetch = async () => new Response("gone", { status: 404 });
+
+    const client = new RendezqueueClient({
+      url: "http://unused",
+      key: "key",
+      hue: "hue",
+      on_data: () => {},
+      on_error: error => errors.push(error),
+    });
+    client.offset = 1;
+    client.send("still-pending");
+    const old_sid = client.sid;
+
+    await client._poll();
+
+    assert.equal(client.sid, old_sid);
+    assert.equal(client.offset, 1);
+    assert.deepStrictEqual(client.outgoing_queue, ["still-pending"]);
+    assert.equal(errors.length, 1);
+  } finally {
+    globalThis.fetch = original_fetch;
+  }
+});
