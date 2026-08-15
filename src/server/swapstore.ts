@@ -108,6 +108,14 @@ class SwapStore {
 
     if (answer_map) {
       let answer = answer_map.get(sid);
+      if (answer && answer.expiry_ms <= now_ms) {
+        answer_map.delete(sid);
+        if (answer_map.size == 0) {
+          this.swapped_answer_multimap.delete(key);
+          answer_map = undefined;
+        }
+        answer = undefined;
+      }
       if (answer) {
         if (SwapStore.matches_original(answer.original_values, offset, values)) {
           let result: TrySwapResponse = {
@@ -124,10 +132,10 @@ class SwapStore {
       }
     }
     let offer = this.unmatched_offer_map.get(key);
-    if (offer && offer.expiry_ms == 0) {
+    if (offer && offer.expiry_ms <= now_ms) {
       this.unmatched_offer_map.delete(key);
       offer = undefined;  // Fall through to next case.
-      this.expire_swapped_answers(key, now_ms);  // Ensure stuff would expire.
+      this.expire_swapped_answers(key, now_ms);  // Best-effort cleanup for this key.
     }
 
     // We'll need to make an offer.

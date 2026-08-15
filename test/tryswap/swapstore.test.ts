@@ -33,9 +33,6 @@ test("swapstore basic operations", () => {
   assert.equal(asObj(res).sid, "6sid");
   assert.equal(asObj(res).values[0], "my5value");
 
-  swapstore.print_unmatched();
-  swapstore.print_swapped();
-
   res = tryswap_single("mykey", "5sid", "my5value");
   assert.equal(asObj(res).key, "mykey");
   assert.equal(asObj(res).values[0], "my6value");
@@ -76,7 +73,31 @@ test("swapstore basic operations", () => {
   assert.ok(!("values" in asObj(res)));
 
   swapstore.expire_unmatched_offers(30000);
+});
 
-  swapstore.print_unmatched();
-  swapstore.print_swapped();
+test("an accessed expired offer is not swapped when cleanup is blocked", () => {
+  const swapstore = new SwapStore();
+
+  swapstore.tryswap("blocker", "a", 0, ["live"], 0, 20);
+  swapstore.tryswap("target", "b", 0, ["stale"], 0, 1);
+
+  const result = swapstore.tryswap("target", "c", 0, ["fresh"], 1000, 1);
+  assert.notEqual(typeof result, "number");
+  if (typeof result === "number") return;
+  assert.equal(result.offset, 1);
+  assert.equal(result.ttl, 1);
+  assert.ok(!result.values);
+  assert.equal(swapstore.unmatched_offer_map.get("target")?.sid, "c");
+  assert.deepStrictEqual(swapstore.unmatched_offer_map.get("target")?.values, ["fresh"]);
+});
+
+test("an accessed expired answer is not returned when cleanup is blocked", () => {
+  const swapstore = new SwapStore();
+
+  swapstore.tryswap("blocker", "a", 0, ["live"], 0, 20);
+  swapstore.tryswap("target", "b", 0, ["from-b"], 0, 1);
+  swapstore.tryswap("target", "c", 0, ["from-c"], 0, 1);
+
+  const result = swapstore.tryswap("target", "b", 1, [], 1000, 1);
+  assert.equal(result, 404);
 });

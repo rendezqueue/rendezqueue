@@ -14,7 +14,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const scenarios = ["basic.sxpb", "webchat.sxpb"];
+const scenarios = ["basic.sxpb", "expiry.sxpb", "webchat.sxpb"];
 
 describe("scenario tests", () => {
   for (const scenario_file of scenarios) {

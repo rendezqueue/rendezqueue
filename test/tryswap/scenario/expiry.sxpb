@@ -1,0 +1,26 @@
+(())
+
+; A live first entry blocks the insertion-ordered global expiry sweep
+; from reaching later keys.
+(()
+ (req (key "blocker") (sid "Blocker") (ttl 20) (values (()) "live"))
+ (res (key "blocker") (sid "Blocker") (ttl 20) (offset 1))
+)
+
+; Create a completed swap whose cached answers expire after one second.
+(()
+ (req (key "answer-target") (sid "Alice") (ttl 1) (values (()) "from-alice"))
+ (res (key "answer-target") (sid "Alice") (ttl 1) (offset 1))
+)
+(()
+ (req (key "answer-target") (sid "Bob") (ttl 1) (values (()) "from-bob"))
+ (res (key "answer-target") (sid "Bob") (offset 1) (values (()) "from-alice"))
+)
+
+; The live blocker still prevents global cleanup from reaching this key.
+; A direct lookup at the exact deadline must reject the expired cached answer.
+(()
+ (delta_ms 1000)
+ (req (key "answer-target") (sid "Alice") (offset 1))
+ (http_status_code 404)
+)
