@@ -3,10 +3,9 @@ import { spawn, ChildProcess } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as http from "http";
-import * as url from "url";
 import * as os from "os";
-import { chromium, Browser, Page, ConsoleMessage } from "playwright";
-import { test } from "vitest";
+import type { Page } from "playwright";
+import { test } from "playwright/test";
 
 const nodejson_server_filepath = path.resolve(process.cwd(), "dist/src/server/main.js");
 const index_html_filepath = path.resolve(process.cwd(), "demo/webchat/index.html");
@@ -28,7 +27,7 @@ async function waitForFile(filepath: string): Promise<void> {
 
 function createStaticServer(files: Record<string, string>): http.Server {
   return http.createServer((req, res) => {
-    const req_path = url.parse(req.url ?? "").pathname;
+    const req_path = new URL(req.url ?? "", "http://localhost").pathname;
     const lookup_path = req_path === "/" ? "/index.html" : req_path;
     const filepath = files[lookup_path ?? ""];
     if (!filepath) {
@@ -57,13 +56,13 @@ async function get_text(page: Page, selector: string): Promise<string> {
   return await page.$eval(selector, (el) => (el as HTMLElement).innerText);
 }
 
-test("webchat scenario", { timeout: 60000 }, async () => {
+test("webchat scenario", async ({ browser }) => {
+  test.setTimeout(60000);
   const tmp_dirpath = process.env.TEST_TMPDIR ?? os.tmpdir();
   const nodejson_port_filepath = path.join(tmp_dirpath, `nodejson_portfile.${process.pid}`);
 
   let nodejson_server: ChildProcess | undefined;
   let http_server: http.Server | undefined;
-  let browser: Browser | undefined;
   let alice_page: Page | undefined;
   let bob_page: Page | undefined;
 
@@ -73,7 +72,7 @@ test("webchat scenario", { timeout: 60000 }, async () => {
     nodejson_server = spawn(
       "node",
       [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`, `--http_path=${http_path}`],
-      { stdio: ["ignore", "inherit", "inherit"] }
+      { stdio: "ignore" }
     );
 
     // Start http-server
@@ -86,28 +85,16 @@ test("webchat scenario", { timeout: 60000 }, async () => {
     await new Promise<void>(resolve => http_server?.listen(0, "127.0.0.1", resolve));
     // @ts-expect-error address() returns AddressInfo | string | null
     const http_server_port = http_server.address().port;
-    console.log(`http-server started on port ${http_server_port}`);
-
 
     // Wait for nodejson server to be ready
     await waitForFile(nodejson_port_filepath);
     const nodejson_port = fs.readFileSync(nodejson_port_filepath, "utf8").trim();
-    console.log(`nodejson server started on port ${nodejson_port}`);
-
-
-    // Run playwright test
-    browser = await chromium.launch();
-    // unused context
-    // const context = await browser.newContext();
 
     const backend_url = `http://127.0.0.1:${nodejson_port}${http_path}`;
     const room_key = "test-room-" + Math.random();
 
     alice_page = await browser.newPage();
     bob_page = await browser.newPage();
-
-    alice_page.on("console", (msg: ConsoleMessage) => console.log("ALICE:", msg.text()));
-    bob_page.on("console", (msg: ConsoleMessage) => console.log("BOB:", msg.text()));
 
     await alice_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&key=${room_key}&user=Alice`);
     await bob_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&key=${room_key}&user=Bob`);
@@ -208,16 +195,7 @@ test("webchat scenario", { timeout: 60000 }, async () => {
       "Alice: A4", "Alice: A5",
     ], "Bob");
 
-    console.log("--- Test passed ---");
-
-  } catch (e) {
-    if (alice_page) console.log("Alice page content on error:", await alice_page.content());
-    if (bob_page) console.log("Bob page content on error:", await bob_page.content());
-    throw e;
   } finally {
-    if (browser) {
-      await browser.close();
-    }
     if (nodejson_server) {
       nodejson_server.kill();
     }

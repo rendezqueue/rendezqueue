@@ -2,10 +2,9 @@ import { spawn, ChildProcess } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as http from "http";
-import * as url from "url";
 import * as os from "os";
-import { chromium, Browser, Page, ConsoleMessage } from "playwright";
-import { test, expect } from "vitest";
+import type { Page, ConsoleMessage } from "playwright";
+import { test, expect } from "playwright/test";
 
 const nodejson_server_filepath = path.resolve(process.cwd(), "dist/src/server/main.js");
 const index_html_filepath = path.resolve(process.cwd(), "demo/webchat/index.html");
@@ -27,7 +26,7 @@ async function waitForFile(filepath: string): Promise<void> {
 
 function createStaticServer(files: Record<string, string>): http.Server {
   return http.createServer((req, res) => {
-    const req_path = url.parse(req.url ?? "").pathname;
+    const req_path = new URL(req.url ?? "", "http://localhost").pathname;
     const lookup_path = req_path === "/" ? "/index.html" : req_path;
     const filepath = files[lookup_path ?? ""];
     if (!filepath) {
@@ -52,13 +51,13 @@ function createStaticServer(files: Record<string, string>): http.Server {
   });
 }
 
-test("webchat dynamic config test", { timeout: 60000 }, async () => {
+test("webchat dynamic config test", async ({ browser }) => {
+  test.setTimeout(60000);
   const tmp_dirpath = process.env.TEST_TMPDIR ?? os.tmpdir();
   const nodejson_port_filepath = path.join(tmp_dirpath, `nodejson_portfile_dyn.${process.pid}`);
 
   let nodejson_server: ChildProcess | undefined;
   let http_server: http.Server | undefined;
-  let browser: Browser | undefined;
   let page: Page | undefined;
 
   try {
@@ -67,7 +66,7 @@ test("webchat dynamic config test", { timeout: 60000 }, async () => {
     nodejson_server = spawn(
       "node",
       [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`, `--http_path=${http_path}`],
-      { stdio: ["ignore", "inherit", "inherit"] }
+      { stdio: "ignore" }
     );
 
     // Start http-server
@@ -85,15 +84,12 @@ test("webchat dynamic config test", { timeout: 60000 }, async () => {
     await waitForFile(nodejson_port_filepath);
     const nodejson_port = fs.readFileSync(nodejson_port_filepath, "utf8").trim();
 
-    // Run playwright test
-    browser = await chromium.launch();
     page = await browser.newPage();
 
     let key_logs: string[] = [];
     page.on("console", (msg: ConsoleMessage) => {
       const text = msg.text();
       if (text.includes("Starting webchat client with key:")) {
-        console.log("LOG:", text);
         key_logs.push(text);
       }
     });
@@ -118,13 +114,7 @@ test("webchat dynamic config test", { timeout: 60000 }, async () => {
     await page.waitForTimeout(1000);
     expect(key_logs.some(l => l.includes("room1"))).toBe(true);
 
-  } catch (e) {
-    if (page) console.log("Page content on error:", await page.content());
-    throw e;
   } finally {
-    if (browser) {
-      await browser.close();
-    }
     if (nodejson_server) {
       nodejson_server.kill();
     }

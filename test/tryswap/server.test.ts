@@ -71,13 +71,11 @@ async function main() {
       `--o-http-port=${port_filepath}`,
     ];
     server = spawn(process.execPath, args, {
-      stdio: ["ignore", "inherit", "inherit"] // pipe server stdout/stderr
+      stdio: "ignore"
     });
 
     await wait_for_file(port_filepath);
     const port = fs.readFileSync(port_filepath, "utf8").trim();
-    console.log(`Server started on port ${port}`);
-
     const sxpb_content = fs.readFileSync(scenario_filepath, "utf8");
     const expectations = SxPB.parse(sxpb_content);
 

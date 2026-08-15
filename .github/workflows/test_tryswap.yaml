@@ -11,6 +11,14 @@ jobs:
         with:
           node-version: 24
       - run: npm install
-      - run: npx playwright install
+      - run: npx playwright install --with-deps chromium
       - run: npm test
+      - run: npm run test:browse
       - run: npm run lint
+      - name: Upload browser test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results/
+          if-no-files-found: ignore

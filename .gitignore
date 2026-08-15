@@ -1,6 +1,10 @@
-/.vs*
+/.*
 /MODULE.bazel.lock
 /bazel-*
 /dist/
 /node_modules/
 /package-lock.json
+/playwright.config.ts
+/test-results/
+/playwright-report/
+/blob-report/

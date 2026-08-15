@@ -14,6 +14,4 @@ test("bytestring basic test", () => {
   const result = JSON.parse(encoded);
   assert.equal(result.length, 256);
   assert.equal(result, expect);
-
-  console.log(encoded);
 });

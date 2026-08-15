@@ -67,6 +67,4 @@ test("tryswap concatenation tests", () => {
 
   swapstore.expire_unmatched_offers(30000);
 
-  swapstore.print_unmatched();
-  swapstore.print_swapped();
 });
