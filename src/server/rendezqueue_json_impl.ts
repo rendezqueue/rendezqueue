@@ -57,6 +57,9 @@ function inplace_decode_tryswap_message(msg: any): string {
   }
   if (msg.b64 & 2) {
     msg.sid = atob(msg.sid);
+    if (typeof msg.ack === "string") {
+      msg.ack = atob(msg.ack);
+    }
   }
   if (msg.b64 & 1) {
     msg.values = msg.values.map(atob);
@@ -70,6 +73,9 @@ function inplace_encode_tryswap_message(msg: any): void {
   }
   if (msg.b64 & 2) {
     msg.sid = btoa(msg.sid);
+    if (typeof msg.ack === "string") {
+      msg.ack = btoa(msg.ack);
+    }
   }
   if (msg.b64 & 1) {
     if (msg.values === undefined) {

@@ -13,27 +13,27 @@
 (()
  (delta_ms 1000)
  (req (key "k") (sid "Bob") (ttl 5) (values (()) "bbbb"))
- (res (key "k") (sid "Bob") (offset 1) (values (()) "aa"))
+ (res (key "k") (sid "Bob") (offset 1) (ack "Alice") (values (()) "aa"))
 )
 
 ; Both get a good response if they send their original values.
 (()
  (req (key "k") (sid "Bob") (values (()) "bbbb"))
- (res (key "k") (sid "Bob") (offset 1) (values (()) "aa"))
+ (res (key "k") (sid "Bob") (offset 1) (ack "Alice") (values (()) "aa"))
 )
 (()
  (req (key "k") (sid "Alice") (values (()) "aa"))
- (res (key "k") (sid "Alice") (offset 1) (values (()) "bbbb"))
+ (res (key "k") (sid "Alice") (offset 1) (ack "Bob") (values (()) "bbbb"))
 )
 
 ; Both still get a good response with base64url-encoded strings.
 (()
  (req (b64 7) (key "aw") (sid "Qm9i") (values (()) "YmJiYg"))
- (res (b64 7) (key "aw") (sid "Qm9i") (offset 1) (values (()) "YWE"))
+ (res (b64 7) (key "aw") (sid "Qm9i") (offset 1) (ack "QWxpY2U") (values (()) "YWE"))
 )
 (()
  (req (b64 7) (key "aw") (sid "QWxpY2U") (values (()) "YWE"))
- (res (b64 7) (key "aw") (sid "QWxpY2U") (offset 1) (values (()) "YmJiYg"))
+ (res (b64 7) (key "aw") (sid "QWxpY2U") (offset 1) (ack "Qm9i") (values (()) "YmJiYg"))
 )
 
 ; But not nonsense.
@@ -58,22 +58,22 @@
 (()
  (delta_ms 4000)
  (req (key "k") (sid "Alice") (offset 1))
- (res (key "k") (sid "Alice") (offset 1) (values (()) "bbbb"))
+ (res (key "k") (sid "Alice") (offset 1) (ack "Bob") (values (()) "bbbb"))
 )
 (()
  (req (key "k") (sid "Bob") (offset 1))
- (res (key "k") (sid "Bob") (offset 1) (values (()) "aa"))
+ (res (key "k") (sid "Bob") (offset 1) (ack "Alice") (values (()) "aa"))
 )
 
 ; With 1 millisecond remaining, both still get a good response.
 (()
  (delta_ms 999)
  (req (key "k") (sid "Alice") (offset 1))
- (res (key "k") (sid "Alice") (offset 1) (values (()) "bbbb"))
+ (res (key "k") (sid "Alice") (offset 1) (ack "Bob") (values (()) "bbbb"))
 )
 (()
  (req (key "k") (sid "Bob") (offset 1))
- (res (key "k") (sid "Bob") (offset 1) (values (()) "aa"))
+ (res (key "k") (sid "Bob") (offset 1) (ack "Alice") (values (()) "aa"))
 )
 
 ; After 1 more millisecond, the data expires.

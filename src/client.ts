@@ -161,6 +161,9 @@ class RendezqueueClient {
     }
     if (msg.b64 & 2) {
       msg.sid = atob(msg.sid);
+      if (typeof msg.ack === "string") {
+        msg.ack = atob(msg.ack);
+      }
     }
     if (msg.values && (msg.b64 & 1)) {
       msg.values = msg.values.map((v: string) => atob(v));

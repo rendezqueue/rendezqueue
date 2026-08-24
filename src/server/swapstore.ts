@@ -9,6 +9,7 @@ interface UnmatchedOffer {
 
 interface SwappedAnswer {
   original_values: string[];
+  peer_sid: string;
   values: string[];
   expiry_ms: number;
 }
@@ -17,6 +18,7 @@ export interface TrySwapResponse {
   key: string;
   sid: string;
   offset: number;
+  ack?: string;
   values?: string[];
   ttl?: number;
 }
@@ -122,6 +124,7 @@ class SwapStore {
             key: key,
             sid: sid,
             offset: answer.original_values.length,
+            ack: answer.peer_sid,
           };
           if (answer.values.length > 0) {
             result.values = answer.values;
@@ -158,6 +161,10 @@ class SwapStore {
       };
     }
 
+    if (!offer.sid) {
+      return 500;  // Unexpected.
+    }
+
     // Still no match? Might as well reset expiry.
     if (offer.sid == sid) {
       let original_values = offer.values || [];
@@ -189,6 +196,7 @@ class SwapStore {
     }
     answer_map.set(sid, {
       original_values: values,
+      peer_sid: offer.sid,
       values: offer.values || [],
       expiry_ms: now_ms + ttl * 1000,
     });
@@ -196,6 +204,7 @@ class SwapStore {
     if (offer.sid) {
       answer_map.set(offer.sid, {
         original_values: offer.values || [],
+        peer_sid: sid,
         values: values,
         expiry_ms: now_ms + ttl * 1000,
       });
@@ -209,6 +218,7 @@ class SwapStore {
       key: key,
       sid: sid,
       offset: values.length,
+      ack: offer.sid,
       values: offer.values,
     };
   }

@@ -15,7 +15,7 @@
 ; 3. Bob sends "B1", swaps with Alice's offer of "A1" and "A2".
 (()
  (req (b64 1) (key "test-room") (sid "Bob-1") (ttl 5) (values (()) "QjE"))
- (res (b64 1) (key "test-room") (sid "Bob-1") (offset 1) (values (()) "QTE" "QTI"))
+ (res (b64 1) (key "test-room") (sid "Bob-1") (offset 1) (ack "Alice-1") (values (()) "QTE" "QTI"))
 )
 
 ; 4. Bob starts a new session ("Bob-2") and polls for messages. Gets none.
@@ -40,13 +40,13 @@
 ; The server rejects "A3" by not incrementing the offset, but returns "B1".
 (()
  (req (b64 1) (key "test-room") (sid "Alice-1") (ttl 5) (offset 2) (values (()) "QTM"))
- (res (b64 1) (key "test-room") (sid "Alice-1") (offset 2) (values (()) "QjE"))
+ (res (b64 1) (key "test-room") (sid "Alice-1") (offset 2) (ack "Bob-1") (values (()) "QjE"))
 )
 
 ; 8. Alice starts a new session ("Alice-2"), sends "A3", and gets Bob's pending messages.
 (()
  (req (b64 1) (key "test-room") (sid "Alice-2") (ttl 5) (values (()) "QTM"))
- (res (b64 1) (key "test-room") (sid "Alice-2") (offset 1) (values (()) "QjI" "QjM"))
+ (res (b64 1) (key "test-room") (sid "Alice-2") (offset 1) (ack "Bob-2") (values (()) "QjI" "QjM"))
 )
 
 ; 9. Alice starts a new session ("Alice-3"), sends "A4".
@@ -64,20 +64,20 @@
 ; 11. Bob ("Bob-2") polls to get the result of his swap with "Alice-2".
 (()
  (req (b64 1) (key "test-room") (sid "Bob-2") (offset 2))
- (res (b64 1) (key "test-room") (sid "Bob-2") (offset 2) (values (()) "QTM"))
+ (res (b64 1) (key "test-room") (sid "Bob-2") (offset 2) (ack "Alice-2") (values (()) "QTM"))
 )
 
 ; 12. Bob starts a new session ("Bob-3") and polls, swapping with Alice's pending offer.
 ; The response has no offset because the request had no values.
 (()
  (req (b64 1) (key "test-room") (sid "Bob-3") (ttl 5))
- (res (b64 1) (key "test-room") (sid "Bob-3") (values (()) "QTQ" "QTU"))
+ (res (b64 1) (key "test-room") (sid "Bob-3") (ack "Alice-3") (values (()) "QTQ" "QTU"))
 )
 
 ; 13. Alice ("Alice-3") polls to get the result of her swap with "Bob-3".
 (()
  (req (b64 1) (key "test-room") (sid "Alice-3") (offset 2))
- (res (key "test-room") (sid "Alice-3") (offset 2))
+ (res (key "test-room") (sid "Alice-3") (offset 2) (ack "Bob-3"))
 )
 
 ; 14. Alice starts a new session ("Alice-4") and polls, gets nothing.

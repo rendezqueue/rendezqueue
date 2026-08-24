@@ -14,7 +14,7 @@
 )
 (()
  (req (key "answer-target") (sid "Bob") (ttl 1) (values (()) "from-bob"))
- (res (key "answer-target") (sid "Bob") (offset 1) (values (()) "from-alice"))
+ (res (key "answer-target") (sid "Bob") (offset 1) (ack "Alice") (values (()) "from-alice"))
 )
 
 ; The live blocker still prevents global cleanup from reaching this key.
