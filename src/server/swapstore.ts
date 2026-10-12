@@ -4,6 +4,7 @@ const MAX_TTL_SECONDS = 20;
 interface UnmatchedOffer {
   sid?: string;
   values?: string[];
+  ack: string;
   expiry_ms: number;
 }
 
@@ -11,6 +12,7 @@ interface SwappedAnswer {
   original_values: string[];
   peer_sid: string;
   values: string[];
+  peer_acked: boolean;
   expiry_ms: number;
 }
 
@@ -116,7 +118,30 @@ class SwapStore {
     return original_slice.every((v, i) => values[i] == v);
   }
 
-  tryswap(key: string, sid: string, offset: number, values: string[], now_ms: number, ttl: number = 0): number | TrySwapResponse {
+  static matches_ack_payload(original_values: string[], offset: number, values: string[]): boolean {
+    return (offset === 0 && values.length === original_values.length &&
+      SwapStore.matches_original(original_values, 0, values)) ||
+      (values.length === 0 && offset === original_values.length);
+  }
+
+  private forget_pair(key: string, sid: string, peer_sid: string, now_ms: number): boolean {
+    const answer_map = this.swapped_answer_multimap.get(key);
+    if (!answer_map) {
+      return true;
+    }
+    const peer = answer_map.get(peer_sid);
+    if (peer && peer.expiry_ms > now_ms && peer.peer_sid !== sid) {
+      return false;
+    }
+    answer_map.delete(sid);
+    answer_map.delete(peer_sid);
+    if (answer_map.size === 0) {
+      this.swapped_answer_multimap.delete(key);
+    }
+    return true;
+  }
+
+  tryswap(key: string, sid: string, offset: number, ack: string, values: string[], now_ms: number, ttl: number = 0): number | TrySwapResponse {
     if (!Number.isInteger(now_ms)) {
       return 500;
     }
@@ -137,13 +162,30 @@ class SwapStore {
         answer = undefined;
       }
       if (answer) {
-        if (SwapStore.matches_original(answer.original_values, offset, values)) {
+        if (ack === "" &&
+            SwapStore.matches_original(answer.original_values, offset, values)) {
           return make_response({
             key: key,
             sid: sid,
             offset: answer.original_values.length,
             ack: answer.peer_sid,
             values: answer.values,
+          });
+        }
+        if (ack !== "" &&
+            SwapStore.matches_ack_payload(answer.original_values, offset, values)) {
+          if (ack !== answer.peer_sid) {
+            return 404;
+          }
+          const peer = (answer_map as Map<string, SwappedAnswer>).get(ack) as SwappedAnswer;
+          if (peer.peer_sid === sid && peer.expiry_ms > now_ms) {
+            peer.peer_acked = true;
+          }
+          return make_response({
+            key: key,
+            sid: sid,
+            offset: answer.original_values.length,
+            ack: answer.peer_acked ? sid : answer.peer_sid,
           });
         }
         return 404;
@@ -158,13 +200,17 @@ class SwapStore {
 
     // We'll need to make an offer.
     if (!offer) {
-      if (offset != 0) {
+      if (offset !== 0) {
         return 404;
       }
-      if (values.length > 0) {
+      if (ack !== "" && !this.forget_pair(key, sid, ack, now_ms)) {
+        return 404;
+      }
+      if (values.length > 0 || ack !== "") {
         this.unmatched_offer_map.set(key, {
           sid: sid,
           values: values,
+          ack: ack,
           expiry_ms: now_ms + ttl * 1000,
         });
       }
@@ -172,7 +218,8 @@ class SwapStore {
         key: key,
         sid: sid,
         offset: values.length,
-        ttl: ttl,
+        ack: ack,
+        ttl: ack === "" ? ttl : 0,
       });
     }
 
@@ -180,14 +227,48 @@ class SwapStore {
       return 500;  // Unexpected.
     }
 
+    let original_values = offer.values || [];
+    if (offer.sid === sid && ack !== "") {
+      if (!SwapStore.matches_ack_payload(original_values, offset, values)) {
+        return 404;
+      }
+      if (offer.ack !== "" && offer.ack !== ack) {
+        return 404;
+      }
+      if (!this.forget_pair(key, sid, ack, now_ms)) {
+        return 404;
+      }
+      offer.ack = ack;
+      return make_response({
+        key: key,
+        sid: sid,
+        offset: original_values.length,
+        ack: ack,
+      });
+    }
+
     // Still no match? Might as well reset expiry.
-    if (offer.sid == sid) {
-      let original_values = offer.values || [];
+    if (offer.sid === sid) {
+      if (offer.ack !== "") {
+        // No changes allowed while acking,
+        // but permit a repeated recovery initialization.
+        if (values.length !== original_values.length ||
+            !SwapStore.matches_original(original_values, 0, values)) {
+          return 404;
+        }
+        return make_response({
+          key: key,
+          sid: sid,
+          offset: values.length,
+          ttl: ttl,
+        });
+      }
       if (SwapStore.matches_original(original_values, offset, values)) {
         this.unmatched_offer_map.delete(key);
         this.unmatched_offer_map.set(key, {
           sid: sid,
           values: original_values.slice(0, offset).concat(values),
+          ack: "",
           expiry_ms: now_ms + ttl * 1000,
         });
         return make_response({
@@ -200,9 +281,21 @@ class SwapStore {
       return 404;
     }
 
-    if (offset != 0) {
+    if (offset !== 0) {
       // Invalid offset. We had no existing data!
       return 404;
+    }
+    if (offer.ack !== "" && offer.ack !== sid) {
+      return 404;
+    }
+    if (ack !== "") {
+      if (ack !== offer.sid) {
+        return 404;
+      }
+      if (!this.forget_pair(key, sid, ack, now_ms)) {
+        return 404;
+      }
+      answer_map = this.swapped_answer_multimap.get(key);
     }
 
     if (!answer_map) {
@@ -213,6 +306,7 @@ class SwapStore {
       original_values: values,
       peer_sid: offer.sid,
       values: offer.values || [],
+      peer_acked: offer.ack !== "" && offer.ack === sid,
       expiry_ms: now_ms + ttl * 1000,
     });
     // @ts-ignore: offer is guaranteed to exist and offer.sid != sid here.
@@ -221,20 +315,22 @@ class SwapStore {
         original_values: offer.values || [],
         peer_sid: sid,
         values: values,
+        peer_acked: ack !== "" && ack === offer.sid,
         expiry_ms: now_ms + ttl * 1000,
       });
     }
 
     this.unmatched_offer_map.delete(key);
     this.unmatched_offer_map.set(key, {
+      ack: "",
       expiry_ms: 0,
     });
     return make_response({
       key: key,
       sid: sid,
       offset: values.length,
-      ack: offer.sid,
-      values: offer.values,
+      ack: ack !== "" && offer.ack !== "" && offer.ack === sid ? sid : offer.sid,
+      values: ack === "" ? offer.values : undefined,
     });
   }
 }

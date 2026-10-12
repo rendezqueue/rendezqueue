@@ -7,7 +7,7 @@ test("swapstore basic operations", () => {
   const swapstore = new SwapStore();
 
   function tryswap_single(key: string, sid: string, value: string) {
-    return swapstore.tryswap(key, sid, 0, [value], 1);
+    return swapstore.tryswap(key, sid, 0, "", [value], 1);
   }
 
   // Helper to cast result to expected object type for testing
@@ -41,32 +41,32 @@ test("swapstore basic operations", () => {
   assert.equal(asObj(res).key, "mykey");
   assert.equal(asObj(res).sid, "8sid");
 
-  res = swapstore.tryswap("mykey", "9sid", 0, ["my9value"], swapstore.ttl + 2);
+  res = swapstore.tryswap("mykey", "9sid", 0, "", ["my9value"], swapstore.ttl + 2);
   assert.equal(asObj(res).key, "mykey");
   assert.equal(asObj(res).values[0], "my8value");
 
 
-  res = swapstore.tryswap("kk", "1sid", 0, [], 1);
+  res = swapstore.tryswap("kk", "1sid", 0, "", [], 1);
   assert.equal(asObj(res).key, "kk");
   assert.equal(asObj(res).sid, "1sid");
   assert.equal(asObj(res).offset, 0);
   assert.ok(!("values" in asObj(res)));
-  res = swapstore.tryswap("kk", "2sid", 0, [], 1);
+  res = swapstore.tryswap("kk", "2sid", 0, "", [], 1);
   assert.equal(asObj(res).key, "kk");
   assert.equal(asObj(res).sid, "2sid");
   assert.equal(asObj(res).offset, 0);
   assert.ok(!("values" in asObj(res)));
-  res = swapstore.tryswap("kk", "1sid", 0, ["hii"], 1);
+  res = swapstore.tryswap("kk", "1sid", 0, "", ["hii"], 1);
   assert.equal(asObj(res).key, "kk");
   assert.equal(asObj(res).sid, "1sid");
   assert.equal(asObj(res).offset, 1);
   assert.ok(!("values" in asObj(res)));
-  res = swapstore.tryswap("kk", "2sid", 0, [], 1);
+  res = swapstore.tryswap("kk", "2sid", 0, "", [], 1);
   assert.equal(asObj(res).key, "kk");
   assert.equal(asObj(res).sid, "2sid");
   assert.equal(asObj(res).offset, 0);
   assert.equal(asObj(res).values.length, 1);
-  res = swapstore.tryswap("kk", "1sid", 1, [], 1);
+  res = swapstore.tryswap("kk", "1sid", 1, "", [], 1);
   assert.equal(asObj(res).key, "kk");
   assert.equal(asObj(res).sid, "1sid");
   assert.equal(asObj(res).offset, 1);
@@ -78,10 +78,10 @@ test("swapstore basic operations", () => {
 test("an accessed expired offer is not swapped when cleanup is blocked", () => {
   const swapstore = new SwapStore();
 
-  swapstore.tryswap("blocker", "a", 0, ["live"], 0, 20);
-  swapstore.tryswap("target", "b", 0, ["stale"], 0, 1);
+  swapstore.tryswap("blocker", "a", 0, "", ["live"], 0, 20);
+  swapstore.tryswap("target", "b", 0, "", ["stale"], 0, 1);
 
-  const result = swapstore.tryswap("target", "c", 0, ["fresh"], 1000, 1);
+  const result = swapstore.tryswap("target", "c", 0, "", ["fresh"], 1000, 1);
   assert.notEqual(typeof result, "number");
   if (typeof result === "number") return;
   assert.equal(result.offset, 1);
@@ -94,10 +94,10 @@ test("an accessed expired offer is not swapped when cleanup is blocked", () => {
 test("an accessed expired answer is not returned when cleanup is blocked", () => {
   const swapstore = new SwapStore();
 
-  swapstore.tryswap("blocker", "a", 0, ["live"], 0, 20);
-  swapstore.tryswap("target", "b", 0, ["from-b"], 0, 1);
-  swapstore.tryswap("target", "c", 0, ["from-c"], 0, 1);
+  swapstore.tryswap("blocker", "a", 0, "", ["live"], 0, 20);
+  swapstore.tryswap("target", "b", 0, "", ["from-b"], 0, 1);
+  swapstore.tryswap("target", "c", 0, "", ["from-c"], 0, 1);
 
-  const result = swapstore.tryswap("target", "b", 1, [], 1000, 1);
+  const result = swapstore.tryswap("target", "b", 1, "", [], 1000, 1);
   assert.equal(result, 404);
 });
