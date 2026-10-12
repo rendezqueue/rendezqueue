@@ -1,0 +1,274 @@
+(())
+
+; ---
+; CASE: Cached pair.
+; Optimistic ACK polls omit both immutable payloads.
+
+; Establish Alice and Bob without either directed ACK yet.
+(()
+ (req (key "cached") (sid "A") (ttl 5) (values (()) "a"))
+ (res (key "cached") (sid "A") (ttl 5) (offset 1))
+)
+(()
+ (req (key "cached") (sid "B") (ttl 5) (values (()) "b"))
+ (res (key "cached") (sid "B") (offset 1) (ack "A") (values (()) "a"))
+)
+(()
+ (req (key "cached") (sid "A") (values (()) "a"))
+ (res (key "cached") (sid "A") (offset 1) (ack "B") (values (()) "b"))
+)
+
+; Alice declares that her immutable payload has length 1,
+; but she omits it because the server still remembers.
+(()
+ (req (key "cached") (sid "A") (offset 1) (ack "B"))
+ (res (key "cached") (sid "A") (offset 1) (ack "B"))
+)
+
+; Bob does the same. His response is terminal.
+(()
+ (req (key "cached") (sid "B") (offset 1) (ack "A"))
+ (res (key "cached") (sid "B") (offset 1) (ack "B"))
+)
+
+; Alice's next omitted ACK poll now receives its terminal evidence too.
+(()
+ (req (key "cached") (sid "A") (offset 1) (ack "B"))
+ (res (key "cached") (sid "A") (offset 1) (ack "A"))
+)
+
+; ---
+; CASE: Missing state.
+; As if after a server restart,
+; both clients get a 404 and must resend their values once while acking.
+
+; Alice's optimistic omitted poll cannot be found from empty server state.
+(()
+ (req (key "restart") (sid "A") (offset 1) (ack "B"))
+ (http_status_code 404)
+)
+
+; The client keeps the same A/B pair, enters recovery, and resends.
+(()
+ (req (key "restart") (sid "A") (ack "B") (values (()) "a"))
+ (res (key "restart") (sid "A") (offset 1) (ack "B"))
+)
+
+; Once Alice's upload is retained, she can poll without resending the payload.
+(()
+ (req (key "restart") (sid "A") (offset 1) (ack "B"))
+ (res (key "restart") (sid "A") (offset 1) (ack "B"))
+)
+
+; Bob must do similar reestablishment of his sent data.
+(()
+ (req (key "restart") (sid "B") (offset 1) (ack "A"))
+ (http_status_code 404)
+)
+(()
+ (req (key "restart") (sid "B") (ack "A") (values (()) "b"))
+ (res (key "restart") (sid "B") (offset 1) (ack "B"))
+)
+
+; Now both can finish acking.
+(()
+ (req (key "restart") (sid "A") (offset 1) (ack "B"))
+ (res (key "restart") (sid "A") (offset 1) (ack "A"))
+)
+(()
+ (req (key "restart") (sid "B") (offset 1) (ack "A"))
+ (res (key "restart") (sid "B") (offset 1) (ack "B"))
+)
+
+; Both clients could still technically retrieve the data if they forget,
+; but it will expire shortly.
+(()
+ (req (key "restart") (sid "A") (offset 1))
+ (res (key "restart") (sid "A") (offset 1) (ack "B") (values (()) "b"))
+)
+(()
+ (req (key "restart") (sid "B") (offset 1))
+ (res (key "restart") (sid "B") (offset 1) (ack "A") (values (()) "a"))
+)
+
+; ---
+; CASE: One-sided answer expiry.
+; The surviving reverse answer is not enough to validate an omitted requester payload. Exact recovery cleans both endpoints,
+; so both sides may take the 404 -> full-resend path.
+
+(()
+ (seed_pair (key "expiry") (left_sid "A") (left_values (()) "a")
+  (right_sid "B") (right_values (()) "b"))
+)
+(() (expire_answer (key "expiry") (sid "A")))
+(()
+ (req (key "expiry") (sid "A") (offset 1) (ack "B"))
+ (http_status_code 404)
+)
+(()
+ (req (key "expiry") (sid "A") (ack "B") (values (()) "a"))
+ (res (key "expiry") (sid "A") (offset 1) (ack "B"))
+)
+(()
+ (req (key "expiry") (sid "B") (offset 1) (ack "A"))
+ (http_status_code 404)
+)
+(()
+ (req (key "expiry") (sid "B") (ack "A") (values (()) "b"))
+ (res (key "expiry") (sid "B") (offset 1) (ack "B"))
+)
+(()
+ (req (key "expiry") (sid "A") (offset 1) (ack "B"))
+ (res (key "expiry") (sid "A") (offset 1) (ack "A"))
+)
+
+; ---
+; CASE: ACK + non-ACK replay.
+; A forced ACK offer plus the exact peer's historical non-ACK replay enters
+; cached recovery with both answers, preserving the asserted A/B association.
+
+; Establish data forcibly as if recovering from server restart.
+(()
+ (req (key "forced-nonack") (sid "A") (ack "B") (values (()) "a"))
+ (res (key "forced-nonack") (sid "A") (offset 1) (ack "B"))
+)
+; Bob does a normal send and is met with an exchange. That works too.
+(()
+ (req (key "forced-nonack") (sid "B") (values (()) "b"))
+ (res (key "forced-nonack") (sid "B") (offset 1) (ack "A") (values (()) "a"))
+)
+; Acks confirmations work as normal.
+(()
+ (req (key "forced-nonack") (sid "B") (offset 1) (ack "A"))
+ (res (key "forced-nonack") (sid "B") (offset 1) (ack "B"))
+)
+(()
+ (req (key "forced-nonack") (sid "A") (offset 1) (ack "B"))
+ (res (key "forced-nonack") (sid "A") (offset 1) (ack "A"))
+)
+
+; ---
+; CASE: No replace.
+; A live unrelated offer is not replaced by an A -> ACK B assertion.
+; Recovery can proceed after that offer expires.
+
+(()
+ (req (key "stale") (sid "X") (values (()) "x"))
+ (res (key "stale") (sid "X") (ttl 20) (offset 1))
+)
+(()
+ (req (key "stale") (sid "A") (ack "B") (values (()) "a"))
+ (http_status_code 404)
+)
+(()
+ (req (key "stale") (sid "X") (values (()) "x"))
+ (res (key "stale") (sid "X") (ttl 20) (offset 1))
+)
+(()
+ (delta_ms 20000)
+ (req (key "stale") (sid "A") (ack "B") (values (()) "a"))
+ (res (key "stale") (sid "A") (offset 1) (ack "B"))
+)
+(()
+ (req (key "stale") (sid "B") (ack "A") (values (()) "b"))
+ (res (key "stale") (sid "B") (offset 1) (ack "B"))
+)
+(()
+ (req (key "stale") (sid "A") (offset 1) (ack "B"))
+ (res (key "stale") (sid "A") (offset 1) (ack "A"))
+)
+
+; ---
+; CASE: Reject unrelated offer.
+
+(()
+ (req (key "conflict") (sid "A") (ack "B") (values (()) "a"))
+ (res (key "conflict") (sid "A") (offset 1) (ack "B"))
+)
+(()
+ (req (key "conflict") (sid "C") (values (()) "c"))
+ (http_status_code 404)
+)
+(()
+ (req (key "conflict") (sid "B") (ack "A") (values (()) "b"))
+ (res (key "conflict") (sid "B") (offset 1) (ack "B"))
+)
+
+; ---
+; CASE: Transactional ACKs.
+; A malformed full payload from Bob is rejected
+; after its ACK could have routed to Alice.
+
+(()
+ (req (key "transaction") (sid "A") (values (()) "a"))
+ (res (key "transaction") (sid "A") (ttl 20) (offset 1))
+)
+(()
+ (req (key "transaction") (sid "B") (values (()) "b"))
+ (res (key "transaction") (sid "B") (offset 1) (ack "A") (values (()) "a"))
+)
+(()
+ (req (key "transaction") (sid "B") (ack "A") (values (()) "WRONG"))
+ (http_status_code 404)
+)
+(()
+ (req (key "transaction") (sid "A") (offset 1) (ack "B"))
+ (res (key "transaction") (sid "A") (offset 1) (ack "B"))
+)
+(()
+ (req (key "transaction") (sid "B") (offset 1) (ack "A"))
+ (res (key "transaction") (sid "B") (offset 1) (ack "B"))
+)
+(()
+ (req (key "transaction") (sid "A") (offset 1) (ack "B"))
+ (res (key "transaction") (sid "A") (offset 1) (ack "A"))
+)
+
+; ---
+; CASE: Cleanup preserves unrelated.
+; Alice and Bob ACKing does not affect another pair of clients on the same key.
+
+(()
+ (req (key "unrelated") (sid "X") (values (()) "x"))
+ (res (key "unrelated") (sid "X") (ttl 20) (offset 1))
+)
+(()
+ (req (key "unrelated") (sid "Y") (values (()) "y"))
+ (res (key "unrelated") (sid "Y") (offset 1) (ack "X") (values (()) "x"))
+)
+(()
+ (req (key "unrelated") (sid "A") (ack "B") (values (()) "a"))
+ (res (key "unrelated") (sid "A") (offset 1) (ack "B"))
+)
+(()
+ (req (key "unrelated") (sid "B") (ack "A") (values (()) "b"))
+ (res (key "unrelated") (sid "B") (offset 1) (ack "B"))
+)
+(()
+ (req (key "unrelated") (sid "X") (values (()) "x"))
+ (res (key "unrelated") (sid "X") (offset 1) (ack "Y") (values (()) "y"))
+)
+
+; ---
+; CASE: Reject malformed.
+
+; Nonempty ACK uploads at a nonzero offset are malformed.
+(()
+ (req (key "validation") (sid "A") (offset 2) (ack "B") (values (()) "a"))
+ (http_status_code 404)
+)
+
+; Empty values plus a positive offset means omitted
+; and therefore needs an exact cached requester payload of that declared length.
+(()
+ (req (key "validation") (sid "A") (offset 1) (ack "B"))
+ (http_status_code 404)
+)
+
+; For a genuinely empty immutable payload,
+; offset zero and values empty are a complete payload.
+; Omitted versus supplied is intentionally immaterial.
+(()
+ (req (key "empty") (sid "Empty-A") (ack "Empty-B"))
+ (res (key "empty") (sid "Empty-A") (ack "Empty-B"))
+)

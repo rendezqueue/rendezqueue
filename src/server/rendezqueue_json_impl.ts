@@ -40,6 +40,10 @@ function inplace_decode_tryswap_message(msg: any): string {
     return "sid";
   }
 
+  if (msg.ack !== undefined && typeof msg.ack !== "string") {
+    return "ack";
+  }
+
   if (msg.offset === undefined) {
     msg.offset = 0;
   } else if (!Number.isInteger(msg.offset) || msg.offset < 0) {
@@ -116,7 +120,11 @@ class RendezqueueJsonImpl {
       return 413;
     }
 
-    if (sid.length > MAX_ID_BYTES) {
+    if (msg.ack !== undefined && typeof msg.ack !== "string") {
+      return 400;
+    }
+    if (sid.length > MAX_ID_BYTES ||
+        (msg.ack !== undefined && msg.ack.length > MAX_ID_BYTES)) {
       return 413;
     }
 
@@ -134,7 +142,7 @@ class RendezqueueJsonImpl {
     }
 
     let result: any = this.swapstore.tryswap(
-      key, sid, offset, values,
+      key, sid, offset, msg.ack ?? "", values,
       now_ms, msg.ttl,
     );
     if (!Number.isInteger(result)) {

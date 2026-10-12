@@ -14,7 +14,12 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const scenarios = ["basic.sxpb", "expiry.sxpb", "webchat.sxpb"];
+const scenarios = [
+  "basic.sxpb",
+  "conditional_ack.sxpb",
+  "expiry.sxpb",
+  "webchat.sxpb",
+];
 
 describe("scenario tests", () => {
   for (const scenario_file of scenarios) {
@@ -28,6 +33,25 @@ describe("scenario tests", () => {
 
       for (const e of (expectations as any)) {
         if (Object.keys(e).length === 0) continue;
+
+        if (e.seed_pair !== undefined) {
+          const seed = e.seed_pair;
+          rendezqueue_json_impl.swapstore.tryswap(
+            seed.key, seed.left_sid, 0, "", seed.left_values, timestamp_ms, 5,
+          );
+          rendezqueue_json_impl.swapstore.tryswap(
+            seed.key, seed.right_sid, 0, "", seed.right_values, timestamp_ms, 5,
+          );
+          continue;
+        }
+        if (e.expire_answer !== undefined) {
+          const expiry = e.expire_answer;
+          const answer_map = rendezqueue_json_impl.swapstore.swapped_answer_multimap.get(expiry.key);
+          if (answer_map !== undefined) {
+            answer_map.delete(expiry.sid);
+          }
+          continue;
+        }
 
         const debug_string = JSON.stringify(e);
         const sstat = inplace_decode_tryswap_message(e.req);
