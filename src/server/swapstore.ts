@@ -23,6 +23,24 @@ export interface TrySwapResponse {
   ttl?: number;
 }
 
+function make_response(a: TrySwapResponse): TrySwapResponse {
+  const result: TrySwapResponse = {
+    key: a.key,
+    sid: a.sid,
+    offset: a.offset,
+  };
+  if (a.ack !== undefined && a.ack !== "") {
+    result.ack = a.ack;
+  }
+  if (a.values !== undefined && a.values.length > 0) {
+    result.values = a.values;
+  }
+  if (a.ttl !== undefined && a.ttl !== 0) {
+    result.ttl = a.ttl;
+  }
+  return result;
+}
+
 class SwapStore {
   unmatched_offer_map: Map<string, UnmatchedOffer>;
   swapped_answer_multimap: Map<string, Map<string, SwappedAnswer>>;
@@ -120,16 +138,13 @@ class SwapStore {
       }
       if (answer) {
         if (SwapStore.matches_original(answer.original_values, offset, values)) {
-          let result: TrySwapResponse = {
+          return make_response({
             key: key,
             sid: sid,
             offset: answer.original_values.length,
             ack: answer.peer_sid,
-          };
-          if (answer.values.length > 0) {
-            result.values = answer.values;
-          }
-          return result;
+            values: answer.values,
+          });
         }
         return 404;
       }
@@ -153,12 +168,12 @@ class SwapStore {
           expiry_ms: now_ms + ttl * 1000,
         });
       }
-      return {
+      return make_response({
         key: key,
         sid: sid,
         offset: values.length,
         ttl: ttl,
-      };
+      });
     }
 
     if (!offer.sid) {
@@ -175,12 +190,12 @@ class SwapStore {
           values: original_values.slice(0, offset).concat(values),
           expiry_ms: now_ms + ttl * 1000,
         });
-        return {
+        return make_response({
           key: key,
           sid: sid,
           offset: offset + values.length,
           ttl: ttl,
-        };
+        });
       }
       return 404;
     }
@@ -214,13 +229,13 @@ class SwapStore {
     this.unmatched_offer_map.set(key, {
       expiry_ms: 0,
     });
-    return {
+    return make_response({
       key: key,
       sid: sid,
       offset: values.length,
       ack: offer.sid,
       values: offer.values,
-    };
+    });
   }
 }
 
