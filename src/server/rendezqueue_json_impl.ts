@@ -52,7 +52,8 @@ function inplace_decode_tryswap_message(msg: any): string {
 
   if (msg.values === undefined) {
     msg.values = [];
-  } else if (!Array.isArray(msg.values)) {
+  } else if (!Array.isArray(msg.values) ||
+      !msg.values.every((value: unknown) => typeof value === "string")) {
     return "values";
   }
 
