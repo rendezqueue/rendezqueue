@@ -146,11 +146,18 @@ test("terminal response preserves an unacknowledged snapshot tail", async () => 
   const original_fetch = globalThis.fetch;
   const received: string[][] = [];
   try {
-    globalThis.fetch = async () => new Response(JSON.stringify({
-      offset: 1,
-      values: [btoa("peer")],
-      b64: 1,
-    }), { status: 200, headers: { "Content-Type": "application/json" } });
+    let polls = 0;
+    globalThis.fetch = async (_url, init) => {
+      const request = JSON.parse(String(init?.body));
+      polls++;
+      return new Response(JSON.stringify({
+        key: request.key,
+        sid: request.sid,
+        offset: 1,
+        ...(polls === 1 ? { ttl: 20 } : { ack: "peer-sid", values: [btoa("peer")] }),
+        b64: 1,
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    };
 
     const client = new RendezqueueClient({
       url: "http://unused",
@@ -158,7 +165,8 @@ test("terminal response preserves an unacknowledged snapshot tail", async () => 
       hue: "hue",
       on_data: values => received.push(values),
     });
-    client.offset = 1;
+    client.send("offered");
+    await client._poll();
     client.send("queued-after-offer");
     const old_sid = client.sid;
 
@@ -179,10 +187,14 @@ test("a response from a superseded session is ignored", async () => {
   try {
     let replacement_sid = "";
     let client: RendezqueueClient;
-    globalThis.fetch = async () => {
+    globalThis.fetch = async (_url, init) => {
+      const request = JSON.parse(String(init?.body));
       client._start_new_session();
       replacement_sid = client.sid;
       return new Response(JSON.stringify({
+        key: request.key,
+        sid: request.sid,
+        ack: "stale-peer-sid",
         offset: 1,
         values: [btoa("stale-peer")],
         b64: 1,

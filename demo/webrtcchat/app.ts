@@ -142,25 +142,9 @@ function resetRtc(): void {
     return;
   }
   log("Resetting WebRTC connection.");
-  isConnected = false;
-  isInitiator = false;
-  remoteHue = null;
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
-  }
-  if (dataChannel) {
-    dataChannel.close();
-    dataChannel = null;
-  }
-  isInitiator = false; // Reset initiator status
   appendMessage("WebRTC connection lost.", "theirs");
-  // Restart client polling to allow for re-connection
-  if(client && client.is_stopped) {
-    client.start();
-    log("Rendezqueue client restarted.");
-    client.send(JSON.stringify({ type: "init", hue: hue }));
-  }
+  // Discard obsolete signaling along with the WebRTC connection.
+  initClient();
 }
 
 function startWebRTC(initiator: boolean): void {
@@ -276,6 +260,8 @@ function resolve_input_from_page_query(page_query: URLSearchParams, name: string
 function initClient(): void {
   if (client) {
     client.stop();
+    // An abandoned client's in-flight reply must not signal its replacement.
+    client.on_data = () => {};
   }
 
   // Manually reset WebRTC state to ensure we don't have lingering connections
