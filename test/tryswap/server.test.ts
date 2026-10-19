@@ -76,6 +76,13 @@ async function main() {
 
     await wait_for_file(port_filepath);
     const port = fs.readFileSync(port_filepath, "utf8").trim();
+    for (const value of [null, 1, true, {}, []]) {
+      const res = await request({ port: port }, JSON.stringify({
+        key: "invalid-values", sid: "invalid", values: [value],
+      }));
+      assert.strictEqual(res.http_status_code, 400);
+    }
+    // The normal scenarios below also verify the server survived those requests.
     const sxpb_content = fs.readFileSync(scenario_filepath, "utf8");
     const expectations = SxPB.parse(sxpb_content);
 
