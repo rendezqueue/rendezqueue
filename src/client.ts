@@ -21,6 +21,11 @@ import {
 
 type Mode = "current" | "previous";
 
+interface PollRun {
+  nextPollTime: number;
+  nextRetryTime: number;
+}
+
 interface Packet {
   attempt: number;
   request: Message;
@@ -50,6 +55,7 @@ class ClientState {
   currentCached = false;
   previousCached = false;
   currentAdvertised = false;
+  previousAdvertised = false;
 
   constructor(namespace: string) {
     if (namespace === "") {
@@ -238,6 +244,9 @@ class ClientState {
     if (packet.request.values.length > 0) {
       this.setHint(slot, true);
     }
+    if (slot === "previous") {
+      this.previousAdvertised = true;
+    }
     if (slot === "current" && reply.next !== "") {
       const generation = this.generation + 1;
       const ownNext = this.id(generation);
@@ -256,6 +265,7 @@ class ClientState {
       });
       this.previousCached = this.currentCached;
       this.currentCached = false;
+      this.previousAdvertised = request.next !== "";
       return { values: [...reply.values], generation };
     }
     return null;
@@ -382,13 +392,15 @@ class RendezqueueClient {
   readonly hue: string;
   on_data: (data: string[]) => void;
   on_error: (error: any) => void;
-  poll_interval_ms: number;
+  private pollIntervalMs!: number;
 
   private core: ClientState;
   private previousNext = false;
+  private readyMode: Mode | null = null;
+  private run: PollRun | null = null;
+  private pollTimer: ReturnType<typeof setTimeout> | null = null;
   is_polling = false;
   is_stopped = true;
-  private poll_interval_id: ReturnType<typeof setInterval> | null = null;
 
   constructor({
     url,
@@ -421,13 +433,24 @@ class RendezqueueClient {
     return this.core.currentAdvertised;
   }
 
+  get poll_interval_ms(): number {
+    return this.pollIntervalMs;
+  }
+
+  set poll_interval_ms(value: number) {
+    if (!Number.isFinite(value) || value <= 0) {
+      throw new Error("poll_interval_ms must be finite and positive");
+    }
+    this.pollIntervalMs = value;
+  }
+
   start(): void {
     if (!this.is_stopped) {
       return;
     }
     this.is_stopped = false;
-    this.poll_interval_id = setInterval(() => void this._poll(), this.poll_interval_ms);
-    void this._poll(); // Initial poll
+    this.run = { nextPollTime: performance.now(), nextRetryTime: 0 };
+    void this._poll();
   }
 
   stop(): void {
@@ -435,43 +458,102 @@ class RendezqueueClient {
       return;
     }
     this.is_stopped = true;
-    if (this.poll_interval_id) {
-      clearInterval(this.poll_interval_id);
-    }
-    this.poll_interval_id = null;
+    this.run = null;
+    this.clearTimer();
   }
 
   send(value: string): void {
     this.core.enqueue(value);
+    const run = this.run;
+    if (run !== null && !this.is_polling && this.inputReady()) {
+      run.nextPollTime = Math.min(
+        run.nextPollTime, Math.max(performance.now(), run.nextRetryTime),
+      );
+      this.schedule(run);
+    }
+  }
+
+  private inputReady(): boolean {
+    return this.core.peer !== "" && this.core.batch === null && this.core.queued.length > 0;
+  }
+
+  private clearTimer(): void {
+    if (this.pollTimer !== null) clearTimeout(this.pollTimer);
+    this.pollTimer = null;
+  }
+
+  private schedule(run: PollRun): void {
+    if (this.run !== run || this.is_polling) return;
+    this.clearTimer();
+    const timer = setTimeout(() => {
+      if (this.run !== run || this.pollTimer !== timer) return;
+      this.pollTimer = null;
+      void this._poll();
+    }, Math.min(2_147_483_647, Math.max(0, Math.ceil(run.nextPollTime - performance.now()))));
+    this.pollTimer = timer;
   }
 
   async _poll(): Promise<void> {
-    if (this.is_polling) {
+    if (this.is_polling) return;
+    const owner = this.run;
+    if (owner !== null && performance.now() < owner.nextPollTime) {
+      this.schedule(owner);
       return;
     }
+    this.clearTimer();
     this.is_polling = true;
-    // Alternate even on errors, so old recovery cannot starve new input and
-    // continuous new input cannot starve previous retries.
-    const mode: Mode = this.previousNext && this.core.previous !== null
-      ? "previous"
-      : "current";
-    this.previousNext = mode === "current";
-    const packet = this.core.send(mode);
-    if (packet === null) {
-      this.is_polling = false;
-      return;
-    }
+    let packet: Packet | null = null;
+    let successful = false;
     try {
+      const generation = this.core.generation;
+      const peer = this.core.peer;
+      const previousAdvertised = this.core.previousAdvertised;
+      const mode: Mode = this.readyMode ?? (
+        !this.inputReady() && this.previousNext && this.core.previous !== null
+          ? "previous" : "current"
+      );
+      this.readyMode = null;
+      this.previousNext = mode === "current";
+      packet = this.core.send(mode);
+      if (packet === null) return;
       const reply = await exchange(this.url, this.room, packet.request);
       const completion = this.core.accept(packet, reply);
+      successful = true;
+      if (this.core.generation !== generation) {
+        this.readyMode = this.core.previousAdvertised ? "current" : "previous";
+      } else if (peer === "" && this.core.peer !== "") {
+        this.readyMode = "current";
+      } else if (!previousAdvertised && this.core.previousAdvertised) {
+        this.readyMode = "current";
+      } else if (reply === null && packet.request.isReference()) {
+        this.readyMode = mode;
+      }
       if (completion !== null && this.on_data) {
         this.on_data(completion.values);
       }
     } catch (error) {
-      this.core.timeout(packet);
-      this.on_error(error);
+      successful = false;
+      if (packet !== null) this.core.timeout(packet);
+      try {
+        this.on_error(error);
+      } catch (observerError) {
+        console.error("Rendezqueue error callback failed", observerError);
+      }
     } finally {
       this.is_polling = false;
+      const run = this.run;
+      if (run !== null) {
+        const now = performance.now();
+        if (!successful || run !== owner) {
+          run.nextRetryTime = now + this.poll_interval_ms;
+          run.nextPollTime = run.nextRetryTime;
+        } else {
+          run.nextRetryTime = 0;
+          run.nextPollTime = this.readyMode !== null || this.inputReady()
+            ? now : now + this.poll_interval_ms;
+        }
+        this.schedule(run);
+      }
     }
   }
 }
