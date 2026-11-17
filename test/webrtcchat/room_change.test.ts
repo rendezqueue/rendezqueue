@@ -55,7 +55,7 @@ async function get_text(page: Page, selector: string): Promise<string> {
   return await page.$eval(selector, (el) => (el as HTMLElement).innerText);
 }
 
-test("webrtcchat room change reproduction", async ({ browser }) => {
+test("webrtcchat room change reproduction", async ({ context }) => {
   test.setTimeout(60000);
   const tmp_dirpath = process.env.TEST_TMPDIR ?? os.tmpdir();
   const nodejson_port_filepath = path.join(tmp_dirpath, `nodejson_portfile_repro.${process.pid}`);
@@ -67,7 +67,7 @@ test("webrtcchat room change reproduction", async ({ browser }) => {
 
   try {
     // Start nodejson server
-    const http_path = "/tryswap";
+    const http_path = "/plyswap";
     nodejson_server = spawn(
       "node",
       [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`, `--http_path=${http_path}`],
@@ -79,6 +79,8 @@ test("webrtcchat room change reproduction", async ({ browser }) => {
       "/index.html": index_html_filepath,
       "/app.js": app_js_filepath,
       "/src/client.js": client_js_filepath,
+      "/src/plyswap.js": path.resolve(process.cwd(), "dist/src/plyswap.js"),
+      "/src/plyswap_wire.js": path.resolve(process.cwd(), "dist/src/plyswap_wire.js"),
     };
     http_server = createStaticServer(webrtcchat_files);
     await new Promise<void>(resolve => http_server?.listen(0, "127.0.0.1", resolve));
@@ -93,22 +95,25 @@ test("webrtcchat room change reproduction", async ({ browser }) => {
     const room1 = "room-1-" + Math.random();
     const room2 = "room-2-" + Math.random();
 
-    alice_page = await browser.newPage();
-    bob_page = await browser.newPage();
+    alice_page = await context.newPage();
+    bob_page = await context.newPage();
 
     // Open Alice in Room 1
-    await alice_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&key=${room1}`);
+    await alice_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&room=${room1}`);
 
     // Open Bob in Room 1
-    await bob_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&key=${room1}`);
+    await bob_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&room=${room1}`);
 
     // Wait for connection in Room 1
     await alice_page.waitForSelector(".message:has-text(\"WebRTC data channel is open\")", { timeout: 30000 });
     await bob_page.waitForSelector(".message:has-text(\"WebRTC data channel is open\")", { timeout: 30000 });
 
-    // Change Alice to Room 2
+    // Change Alice to Room 2 and verify traffic actually uses the new room.
+    const aliceRoomChanged = alice_page.waitForRequest(req =>
+      req.method() === "POST" && req.url() === backend_url && req.postDataJSON().room === btoa(room2).replace(/=+$/, ""));
     await alice_page.fill("#room-key-input", room2);
     await alice_page.dispatchEvent("#room-key-input", "change");
+    await aliceRoomChanged;
 
     // Change Bob to Room 2
     await bob_page.fill("#room-key-input", room2);

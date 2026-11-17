@@ -22,7 +22,7 @@ let dataChannel: RTCDataChannel | null = null;
 let isConnected = false;
 let isInitiator = false;
 let remoteHue: string | null = null;
-let client: RendezqueueClient;
+let client: RendezqueueClient | null = null;
 
 function log(message: string): void {
   const logHue = hue ? hue.substring(5, 10) : "init";
@@ -87,7 +87,7 @@ async function handleSignalingMessage(message: SignalingMessage): Promise<void> 
       await peerConnection.setLocalDescription(answer);
       if (!peerConnection.localDescription) return;
       const answerPayload = { ...peerConnection.localDescription.toJSON(), hue: hue };
-      client.send(JSON.stringify(answerPayload));
+      client?.send(JSON.stringify(answerPayload));
       appendMessage("Sent WebRTC answer", "mine");
     }
   } else if (message.type === "answer") {
@@ -127,7 +127,7 @@ async function handleSignalingMessage(message: SignalingMessage): Promise<void> 
 
     // Announce our presence so the other peer can initiate if needed.
     log("Announcing presence to " + remoteHue);
-    client.send(JSON.stringify({ type: "init", hue: hue }));
+    client?.send(JSON.stringify({ type: "init", hue: hue }));
 
     if (remoteHue && hue < remoteHue) {
       isInitiator = true;
@@ -155,12 +155,8 @@ function resetRtc(): void {
   }
   isInitiator = false; // Reset initiator status
   appendMessage("WebRTC connection lost.", "theirs");
-  // Restart client polling to allow for re-connection
-  if(client && client.is_stopped) {
-    client.start();
-    log("Rendezqueue client restarted.");
-    client.send(JSON.stringify({ type: "init", hue: hue }));
-  }
+  // Rejoin with a fresh client so the next exchange starts from new IDs.
+  joinRoom();
 }
 
 function startWebRTC(initiator: boolean): void {
@@ -180,7 +176,7 @@ function startWebRTC(initiator: boolean): void {
     if (event.candidate) {
       log("Generated ICE candidate");
       const candidatePayload = { type: "candidate", candidate: event.candidate.toJSON(), hue: hue };
-      client.send(JSON.stringify(candidatePayload));
+      client?.send(JSON.stringify(candidatePayload));
     }
   };
 
@@ -190,11 +186,6 @@ function startWebRTC(initiator: boolean): void {
     appendMessage(`WebRTC connection state: ${peerConnection.connectionState}`, "theirs");
     if (peerConnection.connectionState === "connected") {
       isConnected = true;
-      if (client) {
-        // Stop polling now that we have a direct connection
-        client.stop();
-        log("Rendezqueue client stopped.");
-      }
     } else if (["disconnected", "failed", "closed"].includes(peerConnection.connectionState)) {
       resetRtc();
     }
@@ -221,7 +212,7 @@ function startWebRTC(initiator: boolean): void {
         if (!peerConnection || !peerConnection.localDescription) return;
         log("Sent WebRTC offer");
         const offerPayload = { ...peerConnection.localDescription.toJSON(), hue: hue };
-        client.send(JSON.stringify(offerPayload));
+        client?.send(JSON.stringify(offerPayload));
         appendMessage("Sent WebRTC offer", "mine");
       })
       .catch(e => log(`Error creating offer: ${e}`));
@@ -240,6 +231,8 @@ function setupDataChannel(channel: RTCDataChannel): void {
   dataChannel.onopen = () => {
     log("WebRTC data channel is open");
     appendMessage("WebRTC data channel is open", "theirs");
+    // The direct channel carries everything from here; leave the room.
+    leaveRendezvous();
   };
   dataChannel.onmessage = (event) => {
     appendMessage(event.data, "theirs");
@@ -258,8 +251,8 @@ function setupDataChannel(channel: RTCDataChannel): void {
 // --- Initialization ---
 
 function resolve_input_from_page_query(page_query: URLSearchParams, name: string, id: string, default_text: string): string {
-  let s = page_query.get(name);
   const e = document.getElementById(id) as HTMLInputElement | null;
+  let s = e?.value || page_query.get(name);
   if (s === null || s === "") {
     if (e && e.value) {
       s = e.value;
@@ -273,10 +266,41 @@ function resolve_input_from_page_query(page_query: URLSearchParams, name: string
   return s;
 }
 
-function initClient(): void {
+/** Stop polling and drop the client; our server-side row expires on its own. */
+function leaveRendezvous(): void {
   if (client) {
     client.stop();
+    client = null;
+    log("Left the rendezvous room.");
   }
+}
+
+/** Join the room with a fresh client and announce presence. */
+function joinRoom(): void {
+  if (client) {
+    return;
+  }
+  console.log(`Joining webrtcchat room: ${roomKey}`);
+  client = new RendezqueueClient({
+    url: backendUrl,
+    room: roomKey,
+    hue: hue,
+    on_data: on_signaling_data,
+    on_error: (e) => log(`RendezqueueClient error: ${e}`),
+  });
+  client.start();
+  // Announce presence
+  client.send(JSON.stringify({ type: "init", hue: hue }));
+}
+
+function initClient(): void {
+  const page_query = new URLSearchParams(window.location.search);
+  const nextBackendUrl = resolve_input_from_page_query(page_query, "url", "backend-url-input", new URL("/plyswap", window.location.href).href);
+  const nextRoom = resolve_input_from_page_query(page_query, "room", "room-key-input", "default-webrtc-room");
+  if (nextBackendUrl === backendUrl && nextRoom === roomKey) {
+    return;
+  }
+  leaveRendezvous();
 
   // Manually reset WebRTC state to ensure we don't have lingering connections
   // and to prevent resetRtc from restarting the old client.
@@ -302,26 +326,14 @@ function initClient(): void {
   isInitiator = false;
   remoteHue = null;
 
-  const page_query = new URLSearchParams(window.location.search);
-  backendUrl = resolve_input_from_page_query(page_query, "url", "backend-url-input", "https://rendezqueue.com/tryswap");
-  roomKey = resolve_input_from_page_query(page_query, "key", "room-key-input", "default-webrtc-room");
+  backendUrl = nextBackendUrl;
+  roomKey = nextRoom;
 
   if(!hue) {
     hue = "user-" + Math.random().toString(36).substr(2, 9);
   }
 
-  console.log(`Starting webrtcchat client with key: ${roomKey}`);
-
-  client = new RendezqueueClient({
-    url: backendUrl,
-    key: roomKey,
-    hue: hue,
-    on_data: on_signaling_data,
-    on_error: (e) => log(`RendezqueueClient error: ${e}`),
-  });
-  client.start();
-  // Announce presence
-  client.send(JSON.stringify({ type: "init", hue: hue }));
+  joinRoom();
 }
 
 function main(): void {

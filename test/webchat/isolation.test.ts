@@ -57,7 +57,7 @@ async function get_text(page: Page, selector: string): Promise<string> {
   return await page.$eval(selector, (el) => (el as HTMLElement).innerText);
 }
 
-test("webchat isolation test", async ({ browser }) => {
+test("webchat isolation test", async ({ context }) => {
   test.setTimeout(60000);
   const tmp_dirpath = process.env.TEST_TMPDIR ?? os.tmpdir();
   const nodejson_port_filepath = path.join(tmp_dirpath, `nodejson_portfile_wc_iso.${process.pid}`);
@@ -69,7 +69,7 @@ test("webchat isolation test", async ({ browser }) => {
 
   try {
     // Start nodejson server
-    const http_path = "/tryswap";
+    const http_path = "/plyswap";
     nodejson_server = spawn(
       "node",
       [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`, `--http_path=${http_path}`],
@@ -81,6 +81,8 @@ test("webchat isolation test", async ({ browser }) => {
       "/index.html": index_html_filepath,
       "/app.js": app_js_filepath,
       "/src/client.js": client_js_filepath,
+      "/src/plyswap.js": path.resolve(process.cwd(), "dist/src/plyswap.js"),
+      "/src/plyswap_wire.js": path.resolve(process.cwd(), "dist/src/plyswap_wire.js"),
     };
     http_server = createStaticServer(webchat_files);
     await new Promise<void>(resolve => http_server?.listen(0, "127.0.0.1", resolve));
@@ -95,14 +97,14 @@ test("webchat isolation test", async ({ browser }) => {
     const key1 = "room1";
     const key2 = "room2";
 
-    alice_page = await browser.newPage();
-    bob_page = await browser.newPage();
+    alice_page = await context.newPage();
+    bob_page = await context.newPage();
 
     // Open Alice with key1
-    await alice_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&key=${key1}&user=Alice`);
+    await alice_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&room=${key1}&user=Alice`);
 
     // Open Bob with key2
-    await bob_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&key=${key2}&user=Bob`);
+    await bob_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&room=${key2}&user=Bob`);
 
     // Helper function to send message
     const sendMessage = async (page: Page, message: string) => {

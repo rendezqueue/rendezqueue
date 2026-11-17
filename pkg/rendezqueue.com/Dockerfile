@@ -20,13 +20,11 @@ WORKDIR /app/html/demo/webdual
 COPY demo/webdual/index.html ./
 COPY dist/demo/webdual/app.js ./
 WORKDIR /app/html/src
-COPY dist/src/client.js ./
+COPY dist/src/*.js ./
 
 WORKDIR /app/server
-COPY dist/src/server/main.js ./
-COPY dist/src/server/rendezqueue_json_impl.js ./
-COPY dist/src/server/swapstore.js ./
-COPY src/server/package.json ./
+COPY dist/src/ ./src/
+COPY src/server/package.json ./package.json
 
 WORKDIR /app
 COPY pkg/rendezqueue.com/entrypoint.sh ./

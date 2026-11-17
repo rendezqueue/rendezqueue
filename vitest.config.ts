@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['test/tryswap/**/*.test.ts'],
+    include: ['test/tryswap/**/*.test.ts', 'test/plyswap/**/*.test.ts'],
     exclude: ['dist/**', 'node_modules/**'],
     pool: 'forks',
     testTimeout: 20000,

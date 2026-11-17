@@ -51,7 +51,7 @@ function createStaticServer(files: Record<string, string>): http.Server {
   });
 }
 
-test("webchat dynamic config test", async ({ browser }) => {
+test("webchat dynamic config test", async ({ context }) => {
   test.setTimeout(60000);
   const tmp_dirpath = process.env.TEST_TMPDIR ?? os.tmpdir();
   const nodejson_port_filepath = path.join(tmp_dirpath, `nodejson_portfile_dyn.${process.pid}`);
@@ -62,7 +62,7 @@ test("webchat dynamic config test", async ({ browser }) => {
 
   try {
     // Start nodejson server
-    const http_path = "/tryswap";
+    const http_path = "/plyswap";
     nodejson_server = spawn(
       "node",
       [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`, `--http_path=${http_path}`],
@@ -74,6 +74,8 @@ test("webchat dynamic config test", async ({ browser }) => {
       "/index.html": index_html_filepath,
       "/app.js": app_js_filepath,
       "/src/client.js": client_js_filepath,
+      "/src/plyswap.js": path.resolve(process.cwd(), "dist/src/plyswap.js"),
+      "/src/plyswap_wire.js": path.resolve(process.cwd(), "dist/src/plyswap_wire.js"),
     };
     http_server = createStaticServer(webchat_files);
     await new Promise<void>(resolve => http_server?.listen(0, "127.0.0.1", resolve));
@@ -84,12 +86,12 @@ test("webchat dynamic config test", async ({ browser }) => {
     await waitForFile(nodejson_port_filepath);
     const nodejson_port = fs.readFileSync(nodejson_port_filepath, "utf8").trim();
 
-    page = await browser.newPage();
+    page = await context.newPage();
 
     let key_logs: string[] = [];
     page.on("console", (msg: ConsoleMessage) => {
       const text = msg.text();
-      if (text.includes("Starting webchat client with key:")) {
+      if (text.includes("Starting webchat client with room:")) {
         key_logs.push(text);
       }
     });

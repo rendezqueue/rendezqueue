@@ -21,6 +21,7 @@ const scenario_filepath = path.join(__dirname, "../tryswap/scenario/webchat.sxpb
 
 function request(options: any, body: any): Promise<any> {
   options.hostname = "127.0.0.1";
+  options.path = "/tryswap";
   options.method = "POST";
   options.headers = {
     "Content-Type": "application/json",
@@ -69,6 +70,7 @@ async function main() {
       main_js_filepath, // Run the JS file directly with node
       "--http_port=0",
       `--o-http-port=${port_filepath}`,
+      "--tryswap_http_path=/tryswap",
     ];
     server = spawn(process.execPath, args, {
       stdio: "ignore"

@@ -61,7 +61,7 @@ async function get_text(page: Page, selector: string): Promise<string> {
   return await page.$eval(selector, (el) => (el as HTMLElement).innerText);
 }
 
-test("webrtcchat vs webrtcchat isolation test", async ({ browser }) => {
+test("webrtcchat vs webrtcchat isolation test", async ({ context }) => {
   test.setTimeout(60000);
   const tmp_dirpath = process.env.TEST_TMPDIR ?? os.tmpdir();
   const nodejson_port_filepath = path.join(tmp_dirpath, `nodejson_portfile_iso_rtc.${process.pid}`);
@@ -73,7 +73,7 @@ test("webrtcchat vs webrtcchat isolation test", async ({ browser }) => {
 
   try {
     // Start nodejson server
-    const http_path = "/tryswap";
+    const http_path = "/plyswap";
     nodejson_server = spawn(
       "node",
       [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`, `--http_path=${http_path}`],
@@ -85,6 +85,8 @@ test("webrtcchat vs webrtcchat isolation test", async ({ browser }) => {
       "/webrtcchat/index.html": webrtcchat_index,
       "/webrtcchat/app.js": webrtcchat_app,
       "/src/client.js": client_js,
+      "/src/plyswap.js": path.resolve(process.cwd(), "dist/src/plyswap.js"),
+      "/src/plyswap_wire.js": path.resolve(process.cwd(), "dist/src/plyswap_wire.js"),
     };
     http_server = createStaticServer(files);
     await new Promise<void>(resolve => http_server?.listen(0, "127.0.0.1", resolve));
@@ -99,14 +101,14 @@ test("webrtcchat vs webrtcchat isolation test", async ({ browser }) => {
     const key1 = "room1";
     const key2 = "room2";
 
-    alice_page = await browser.newPage();
-    bob_page = await browser.newPage();
+    alice_page = await context.newPage();
+    bob_page = await context.newPage();
 
     // Open Alice with key1
-    await alice_page.goto(`http://127.0.0.1:${http_server_port}/webrtcchat/index.html?url=${backend_url}&key=${key1}`);
+    await alice_page.goto(`http://127.0.0.1:${http_server_port}/webrtcchat/index.html?url=${backend_url}&room=${key1}`);
 
     // Open Bob with key2
-    await bob_page.goto(`http://127.0.0.1:${http_server_port}/webrtcchat/index.html?url=${backend_url}&key=${key2}`);
+    await bob_page.goto(`http://127.0.0.1:${http_server_port}/webrtcchat/index.html?url=${backend_url}&room=${key2}`);
 
     // Wait 5 seconds
     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -133,7 +135,7 @@ test("webrtcchat vs webrtcchat isolation test", async ({ browser }) => {
   }
 });
 
-test("webchat vs webrtcchat isolation test", async ({ browser }) => {
+test("webchat vs webrtcchat isolation test", async ({ context }) => {
   test.setTimeout(60000);
   const tmp_dirpath = process.env.TEST_TMPDIR ?? os.tmpdir();
   const nodejson_port_filepath = path.join(tmp_dirpath, `nodejson_portfile_iso_mixed.${process.pid}`);
@@ -145,7 +147,7 @@ test("webchat vs webrtcchat isolation test", async ({ browser }) => {
 
   try {
     // Start nodejson server
-    const http_path = "/tryswap";
+    const http_path = "/plyswap";
     nodejson_server = spawn(
       "node",
       [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`, `--http_path=${http_path}`],
@@ -159,6 +161,8 @@ test("webchat vs webrtcchat isolation test", async ({ browser }) => {
       "/webrtcchat/index.html": webrtcchat_index,
       "/webrtcchat/app.js": webrtcchat_app,
       "/src/client.js": client_js,
+      "/src/plyswap.js": path.resolve(process.cwd(), "dist/src/plyswap.js"),
+      "/src/plyswap_wire.js": path.resolve(process.cwd(), "dist/src/plyswap_wire.js"),
     };
     http_server = createStaticServer(files);
     await new Promise<void>(resolve => http_server?.listen(0, "127.0.0.1", resolve));
@@ -173,13 +177,13 @@ test("webchat vs webrtcchat isolation test", async ({ browser }) => {
     const key1 = "default-room";       // WebChat uses this default
     const key2 = "default-webrtc-room"; // WebRTC uses this default
 
-    webchat_page = await browser.newPage();
-    webrtcchat_page = await browser.newPage();
+    webchat_page = await context.newPage();
+    webrtcchat_page = await context.newPage();
 
     // Open WebChat
-    await webchat_page.goto(`http://127.0.0.1:${http_server_port}/webchat/index.html?url=${backend_url}&key=${key1}`);
+    await webchat_page.goto(`http://127.0.0.1:${http_server_port}/webchat/index.html?url=${backend_url}&room=${key1}`);
     // Open WebRTC Chat
-    await webrtcchat_page.goto(`http://127.0.0.1:${http_server_port}/webrtcchat/index.html?url=${backend_url}&key=${key2}`);
+    await webrtcchat_page.goto(`http://127.0.0.1:${http_server_port}/webrtcchat/index.html?url=${backend_url}&room=${key2}`);
 
     // Wait 5 seconds
     await new Promise(resolve => setTimeout(resolve, 5000));

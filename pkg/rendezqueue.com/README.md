@@ -1,6 +1,6 @@
 # HTTPS rendezqueue.com
 
-This shows exactly how the https://rendezqueue.com/tryswap JSON endpoint is set up.
+This shows exactly how the https://rendezqueue.com/plyswap JSON endpoint is set up.
 
 ## Build
 

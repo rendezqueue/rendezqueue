@@ -75,7 +75,7 @@ test.afterEach(async () => {
   }
 });
 
-test("webdual integration test", async ({ browser }) => {
+test("webdual integration test", async ({ context }) => {
   test.setTimeout(35000);
   // Check if source files exist
   if (!fs.existsSync(nodejson_server_filepath)) {
@@ -92,7 +92,7 @@ test("webdual integration test", async ({ browser }) => {
   // We use process.execPath (node executable) to run the script
   nodejson_server = spawn(
     process.execPath,
-    [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`],
+    [nodejson_server_filepath, "--http_port=0", "--tryswap_http_path=/tryswap", `--o-http-port=${nodejson_port_filepath}`],
     { stdio: "ignore" }
   );
 
@@ -112,10 +112,10 @@ test("webdual integration test", async ({ browser }) => {
   await waitForFile(nodejson_port_filepath);
   const nodejson_port = fs.readFileSync(nodejson_port_filepath, "utf8").trim();
 
-  const context = await browser.newContext();
+
   const page = await context.newPage();
 
-  const webdual_url = `http://127.0.0.1:${http_server_port}/?url=http://127.0.0.1:${nodejson_port}`;
+  const webdual_url = `http://127.0.0.1:${http_server_port}/?url=http://127.0.0.1:${nodejson_port}/tryswap`;
   await page.goto(webdual_url);
 
   await page.waitForSelector("div:has-text(\"Bonjour from Bob!\")", { timeout: 30000 });

@@ -66,8 +66,8 @@ function sendMessage(event: Event): void {
 // --- Initialization ---
 
 function resolve_input_from_page_query(page_query: URLSearchParams, name: string, id: string, default_text: string): string {
-  let s = page_query.get(name);
   const e = document.getElementById(id) as HTMLInputElement | null;
+  let s = e?.value || page_query.get(name);
 
   if (s === null || s === "") {
     if (e && e.value) {
@@ -92,15 +92,15 @@ function initClient(): void {
   }
 
   const page_query = new URLSearchParams(window.location.search);
-  const backendUrl = resolve_input_from_page_query(page_query, "url", "backend-url-input", "https://rendezqueue.com/tryswap");
-  const roomKey = resolve_input_from_page_query(page_query, "key", "room-key-input", "default-room");
+  const backendUrl = resolve_input_from_page_query(page_query, "url", "backend-url-input", new URL("/plyswap", window.location.href).href);
+  const roomKey = resolve_input_from_page_query(page_query, "room", "room-key-input", "default-room");
   hue = resolve_input_from_page_query(page_query, "user", "username-input", "User" + Math.floor(Math.random() * 1000));
 
-  console.log(`Starting webchat client with key: ${roomKey}`);
+  console.log(`Starting webchat client with room: ${roomKey}`);
 
   client = new RendezqueueClient({
     url: backendUrl,
-    key: roomKey,
+    room: roomKey,
     hue: hue,
     on_data: on_data,
   });

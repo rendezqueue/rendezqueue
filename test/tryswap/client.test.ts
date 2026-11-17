@@ -6,7 +6,7 @@ import path from "path";
 import process from "node:process";
 import os from "node:os";
 import { fileURLToPath } from "url";
-import { RendezqueueClient } from "../../src/client.js";
+import { TrySwapClient } from "../../src/tryswap_client.js";
 import { test } from "vitest";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,8 +39,8 @@ async function main() {
   const nodejson_port_file = path.join(tmpDir, `nodejson_portfile.${process.pid}`);
 
   let nodejson_server: ChildProcess | undefined;
-  let alice_client: RendezqueueClient | undefined;
-  let bob_client: RendezqueueClient | undefined;
+  let alice_client: TrySwapClient | undefined;
+  let bob_client: TrySwapClient | undefined;
 
   try {
     // Start nodejson server
@@ -48,7 +48,7 @@ async function main() {
     const http_path = "/test-tryswap-path";
     nodejson_server = spawn(
       process.execPath, // node executable
-      [nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--http_path=${http_path}`],
+      [nodejson_server_path, "--http_port=0", `--o-http-port=${nodejson_port_file}`, `--http_host=${http_host}`, `--tryswap_http_path=${http_path}`],
       { stdio: "ignore" }
     );
 
@@ -62,7 +62,7 @@ async function main() {
     const alice_received: string[] = [];
     const bob_received: string[] = [];
 
-    alice_client = new RendezqueueClient({
+    alice_client = new TrySwapClient({
       url: backend_url,
       key: room_key,
       hue: "Alice",
@@ -72,7 +72,7 @@ async function main() {
       poll_interval_ms: 200, // Use a slightly longer poll interval for stability
     });
 
-    bob_client = new RendezqueueClient({
+    bob_client = new TrySwapClient({
       url: backend_url,
       key: room_key,
       hue: "Bob",
@@ -152,7 +152,7 @@ test("terminal response preserves an unacknowledged snapshot tail", async () => 
       b64: 1,
     }), { status: 200, headers: { "Content-Type": "application/json" } });
 
-    const client = new RendezqueueClient({
+    const client = new TrySwapClient({
       url: "http://unused",
       key: "key",
       hue: "hue",
@@ -178,7 +178,7 @@ test("a response from a superseded session is ignored", async () => {
   const received: string[][] = [];
   try {
     let replacement_sid = "";
-    let client: RendezqueueClient;
+    let client: TrySwapClient;
     globalThis.fetch = async () => {
       client._start_new_session();
       replacement_sid = client.sid;
@@ -189,7 +189,7 @@ test("a response from a superseded session is ignored", async () => {
       }), { status: 200, headers: { "Content-Type": "application/json" } });
     };
 
-    client = new RendezqueueClient({
+    client = new TrySwapClient({
       url: "http://unused",
       key: "key",
       hue: "hue",
@@ -214,7 +214,7 @@ test("404 reports an error without changing session state", async () => {
   try {
     globalThis.fetch = async () => new Response("gone", { status: 404 });
 
-    const client = new RendezqueueClient({
+    const client = new TrySwapClient({
       url: "http://unused",
       key: "key",
       hue: "hue",

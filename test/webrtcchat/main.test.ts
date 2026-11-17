@@ -55,7 +55,7 @@ async function get_text(page: Page, selector: string): Promise<string> {
   return await page.$eval(selector, (el) => (el as HTMLElement).innerText);
 }
 
-test("webrtcchat scenario", async ({ browser }) => {
+test("webrtcchat scenario", async ({ context }) => {
   test.setTimeout(60000);
   const tmp_dirpath = process.env.TEST_TMPDIR ?? os.tmpdir();
   const nodejson_port_filepath = path.join(tmp_dirpath, `nodejson_portfile.${process.pid}`);
@@ -67,7 +67,7 @@ test("webrtcchat scenario", async ({ browser }) => {
 
   try {
     // Start nodejson server
-    const http_path = "/tryswap";
+    const http_path = "/plyswap";
     nodejson_server = spawn(
       "node",
       [nodejson_server_filepath, "--http_port=0", `--o-http-port=${nodejson_port_filepath}`, `--http_path=${http_path}`],
@@ -79,6 +79,8 @@ test("webrtcchat scenario", async ({ browser }) => {
       "/index.html": index_html_filepath,
       "/app.js": app_js_filepath,
       "/src/client.js": client_js_filepath,
+      "/src/plyswap.js": path.resolve(process.cwd(), "dist/src/plyswap.js"),
+      "/src/plyswap_wire.js": path.resolve(process.cwd(), "dist/src/plyswap_wire.js"),
     };
     http_server = createStaticServer(webrtcchat_files);
     await new Promise<void>(resolve => http_server?.listen(0, "127.0.0.1", resolve));
@@ -92,14 +94,14 @@ test("webrtcchat scenario", async ({ browser }) => {
     const backend_url = `http://127.0.0.1:${nodejson_port}${http_path}`;
     const room_key = "test-webrtc-" + Math.random();
 
-    alice_page = await browser.newPage();
-    bob_page = await browser.newPage();
+    alice_page = await context.newPage();
+    bob_page = await context.newPage();
 
     // Open Alice
-    await alice_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&key=${room_key}`);
+    await alice_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&room=${room_key}`);
 
     // Open Bob
-    await bob_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&key=${room_key}`);
+    await bob_page.goto(`http://127.0.0.1:${http_server_port}?url=${backend_url}&room=${room_key}`);
 
     // Wait for WebRTC connection to be established
     // Original test waited for "WebRTC data channel is open"

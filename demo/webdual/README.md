@@ -8,10 +8,11 @@ chromium demo/webdual/index.html
 It should show how many attempts 2 clients (Alice and Bob) need to exchange their data to exchange their greeting messages.
 
 The URL field can be changed to point at a local server as well.
-For example, `http://127.0.0.1:5480` would use the local sever started as:
+This demo speaks the legacy TrySwap protocol, so point it at the opt-in path.
+For example, `http://127.0.0.1:5480/tryswap` would use the local sever started as:
 
 ```shell
-node --import tsx src/server/main.ts --http_host=127.0.0.1 --http_port=5480
+node --import tsx src/server/main.ts --http_host=127.0.0.1 --http_port=5480 --tryswap_http_path=/tryswap
 ```
 
 Since the filesystem is serving the webpage, you might notice that an OPTIONS request happens before each POST.

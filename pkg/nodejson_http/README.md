@@ -9,7 +9,7 @@ That workflow doesn't use `compose.yml`.
 # Start.
 container_id=$(docker run -d --rm -p 5000:80 ghcr.io/rendezqueue/rendezqueue_nodejson_http:latest)
 # Test.
-../../src/server/some_requests.sh --url=http://localhost:5000
+../../src/server/plyswap_requests.sh --url=http://localhost:5000/
 # Stop.
 docker kill ${container_id}
 ```
@@ -25,7 +25,7 @@ docker compose build
 # Run it using the setup in compose.yaml.
 container_id=$(docker compose run -d --service-ports app)
 # Test it.
-../../src/server/some_requests.sh --url=http://localhost:80
+../../src/server/plyswap_requests.sh --url=http://localhost:80/
 # Kill it.
 docker kill ${container_id}
 ```
@@ -34,5 +34,5 @@ docker kill ${container_id}
 
 ```shell
 # Build.
-(cd ../../src/server && docker build . -t rendezqueue_nodejson_http -f ../../pkg/nodejson_http/Dockerfile)
+(cd ../.. && docker build . -t rendezqueue_nodejson_http -f pkg/nodejson_http/Dockerfile)
 ```
